@@ -1,0 +1,1017 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model BiddingCompanyStatus {
+  id        Int       @id @default(autoincrement())
+  biddingId Int       @map("bidding_id")
+  companyId Int       @map("company_id")
+  status    String    @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  bidding   Bidding   @relation(fields: [biddingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([biddingId])
+  @@index([companyId])
+  @@map("bidding_company_statuses")
+}
+
+model BiddingProduct {
+  id                  Int                 @id @default(autoincrement())
+  biddingId           Int                 @map("bidding_id")
+  orderId             Int?                @map("order_id")
+  productCatalogId    Int                 @map("product_catalog_id")
+  name                String              @db.VarChar(255)
+  quantity            Int
+  comments            String?             @db.VarChar(1000)
+  createdAt           DateTime?           @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt           DateTime?           @updatedAt @map("updated_at") @db.Timestamp(0)
+  bidding             Bidding             @relation(fields: [biddingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  order               Order?              @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  productCatalog      ProductCatalog      @relation(fields: [productCatalogId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  biddingProductTaxes BiddingProductTax[]
+  quoteProducts       QuoteProduct[]
+
+  @@index([biddingId])
+  @@index([orderId])
+  @@index([productCatalogId])
+  @@map("bidding_products")
+}
+
+model BiddingProductTax {
+  id               Int            @id @default(autoincrement())
+  biddingProductId Int            @map("bidding_product_id")
+  taxId            Int            @map("tax_id")
+  taxRate          Decimal        @map("tax_rate") @db.Decimal(8, 2)
+  createdAt        DateTime?      @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt        DateTime?      @updatedAt @map("updated_at") @db.Timestamp(0)
+  biddingProduct   BiddingProduct @relation(fields: [biddingProductId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tax              Tax            @relation(fields: [taxId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([biddingProductId, taxId])
+  @@index([taxId])
+  @@map("bidding_products_taxes")
+}
+
+model BiddingUserStatus {
+  id        Int       @id @default(autoincrement())
+  biddingId Int       @map("bidding_id")
+  userId    Int       @map("user_id")
+  status    String    @default("open") @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  bidding   Bidding   @relation(fields: [biddingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([biddingId])
+  @@index([userId])
+  @@map("bidding_user_statuses")
+}
+
+model Bidding {
+  id                     Int                    @id @default(autoincrement())
+  biddingNumber          String                 @map("bidding_number") @db.VarChar(255)
+  createdBy              Int                    @map("created_by")
+  updatedBy              Int?                   @map("updated_by")
+  description            String?                @db.VarChar(255)
+  deadline               DateTime?              @db.Timestamp(0)
+  deliveryDate           DateTime?              @map("delivery_date") @db.Timestamp(0)
+  paymentStatus          String                 @default("pending") @map("payment_status") @db.VarChar(50)
+  deliveryStatus         String                 @default("pending") @map("delivery_status") @db.VarChar(50)
+  addressId              Int?                   @map("address_id")
+  currency               String                 @db.VarChar(10)
+  deliveryType           String                 @map("delivery_type") @db.VarChar(50)
+  costShipping           Decimal                @map("cost_shipping") @db.Decimal(10, 2)
+  subtotal               Decimal                @db.Decimal(15, 2)
+  totalTaxes             Decimal                @map("total_taxes") @db.Decimal(15, 2)
+  total                  Decimal                @db.Decimal(15, 2)
+  status                 String                 @db.VarChar(50)
+  notifiedToday          Boolean                @default(false) @map("notified_today")
+  confirmed              Boolean                @default(false)
+  rated                  Boolean                @default(false)
+  categoryId             Int?                   @map("category_id")
+  attachments            String?                @db.VarChar(255)
+  notes                  String?                @db.Text
+  createdAt              DateTime?              @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt              DateTime?              @updatedAt @map("updated_at") @db.Timestamp(0)
+  biddingCompanyStatuses BiddingCompanyStatus[]
+  biddingProducts        BiddingProduct[]
+  biddingUserStatuses    BiddingUserStatus[]
+  address                UserAddress?           @relation(fields: [addressId], references: [id], onUpdate: NoAction)
+  category               Category?              @relation(fields: [categoryId], references: [id], onUpdate: NoAction)
+  creator                User                   @relation("biddings_created_byTousers", fields: [createdBy], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  updater                User?                  @relation("biddings_updated_byTousers", fields: [updatedBy], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  orders                 Order[]
+  quotes                 Quote[]
+  ratings                Rating[]
+
+  @@index([addressId])
+  @@index([categoryId])
+  @@index([createdBy])
+  @@index([updatedBy])
+  @@map("biddings")
+}
+
+model Category {
+  id             Int            @id @default(autoincrement())
+  name           String         @db.VarChar(255)
+  description    String?        @db.Text
+  productTypeId  Int?           @map("product_type_id")
+  createdAt      DateTime?      @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime?      @updatedAt @map("updated_at") @db.Timestamp(0)
+  biddings       Bidding[]
+  productType    ProductType?   @relation(fields: [productTypeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  userCategories UserCategory[]
+
+  @@index([productTypeId])
+  @@map("categories")
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  postId    Int       @map("post_id")
+  userId    Int       @map("user_id")
+  content   String    @db.Text
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([postId])
+  @@index([userId])
+  @@map("comments")
+}
+
+model Company {
+  id                     Int                    @id @default(autoincrement())
+  name                   String                 @db.VarChar(255)
+  webSite                String?                @map("web_site") @db.VarChar(255)
+  rfcTaxId               String                 @unique @map("rfc_tax_id") @db.VarChar(255)
+  country                String?                @db.VarChar(255)
+  state                  String?                @db.VarChar(255)
+  city                   String?                @db.VarChar(255)
+  address                String?                @db.VarChar(255)
+  zipCode                String?                @map("zip_code") @db.VarChar(255)
+  photo                  String?                @db.VarChar(255)
+  logo                   String?                @db.VarChar(255)
+  createdAt              DateTime?              @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt              DateTime?              @updatedAt @map("updated_at") @db.Timestamp(0)
+  rating                 Float                  @default(0.00)
+  ratingCount            Int                    @default(0) @map("rating_count")
+  biddingCompanyStatuses BiddingCompanyStatus[]
+  companyFolioNumbers    CompanyFolioNumber[]
+  orders                 Order[]
+  posts                  Post[]
+  productCatalogs        ProductCatalog[]
+  quotes                 Quote[]
+  ratings                Rating[]
+  users                  User[]
+
+  @@map("companies")
+}
+
+model CompanyFolioNumber {
+  id         Int       @id @default(autoincrement())
+  companyId  Int       @map("company_id")
+  year       Int
+  entityType String    @map("entity_type") @db.VarChar(255)
+  lastNumber Int       @default(0) @map("last_number")
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([companyId, year, entityType])
+  @@map("company_folio_numbers")
+}
+
+model ConversationUser {
+  id             Int          @id @default(autoincrement())
+  conversationId Int          @map("conversation_id")
+  userId         Int          @map("user_id")
+  rol            String?      @db.VarChar(255)
+  incomeAt       DateTime?    @map("income_at") @db.Timestamp(0)
+  outcomeAt      DateTime?    @map("outcome_at") @db.Timestamp(0)
+  readAt         DateTime?    @map("read_at") @db.Timestamp(0)
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime?    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime?    @updatedAt @map("updated_at") @db.Timestamp(0)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([conversationId])
+  @@index([userId])
+  @@map("conversation_users")
+}
+
+model Conversation {
+  id                Int                @id @default(autoincrement())
+  type              String             @default("direct") @db.VarChar(255)
+  name              String?            @db.VarChar(255)
+  description       String?            @db.Text
+  image             String?            @db.VarChar(255)
+  lastActivityAt    DateTime?          @map("last_activity_at") @db.Timestamp(0)
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt         DateTime?          @updatedAt @map("updated_at") @db.Timestamp(0)
+  isActive          Boolean            @default(true) @map("is_active")
+  conversationUsers ConversationUser[]
+  messages          Message[]
+
+  @@map("conversations")
+}
+
+model Country {
+  id                     Int                     @id @default(autoincrement())
+  name                   String                  @db.VarChar(100)
+  isoCode                String                  @unique @map("iso_code") @db.VarChar(3)
+  createdAt              DateTime?               @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt              DateTime?               @updatedAt @map("updated_at") @db.Timestamp(0)
+  boundaryCoordinates    Json?                   @map("boundary_coordinates")
+  sellerGeographicScopes SellerGeographicScope[]
+  states                 State[]
+  userAddresses          UserAddress[]
+
+  @@map("countries")
+}
+
+model ExchangeRate {
+  id             Int       @id @default(autoincrement())
+  sourceCurrency String    @map("source_currency") @db.VarChar(255)
+  targetCurrency String    @map("target_currency") @db.VarChar(255)
+  rate           Decimal   @db.Decimal(15, 6)
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@map("exchange_rates")
+}
+
+model Feature {
+  id           Int           @id @default(autoincrement())
+  title        String        @db.VarChar(255)
+  isVisible    Boolean       @default(true) @map("is_visible")
+  createdAt    DateTime?     @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt    DateTime?     @updatedAt @map("updated_at") @db.Timestamp(0)
+  planFeatures PlanFeature[]
+
+  @@map("features")
+}
+
+model FriendRequest {
+  id         Int                 @id @default(autoincrement())
+  senderId   Int                 @map("sender_id")
+  receiverId Int                 @map("receiver_id")
+  status     FriendRequestStatus @default(pending)
+  createdAt  DateTime?           @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime?           @updatedAt @map("updated_at") @db.Timestamp(0)
+  receiver   User                @relation("friend_requests_receiver_idTousers", fields: [receiverId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sender     User                @relation("friend_requests_sender_idTousers", fields: [senderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([senderId, receiverId])
+  @@index([receiverId])
+  @@map("friend_requests")
+}
+
+model Friendship {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  friendId  Int       @map("friend_id")
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  friend    User      @relation("friendships_friend_idTousers", fields: [friendId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user      User      @relation("friendships_user_idTousers", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, friendId])
+  @@index([friendId])
+  @@map("friendships")
+}
+
+model MessageCategory {
+  id                    Int                   @id @default(autoincrement())
+  name                  String                @unique @db.VarChar(255)
+  description           String?               @db.VarChar(255)
+  createdAt             DateTime?             @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt             DateTime?             @updatedAt @map("updated_at") @db.Timestamp(0)
+  notifications         Notification[]
+  userMessageCategories UserMessageCategory[]
+
+  @@map("message_categories")
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  conversationId Int          @map("conversation_id")
+  senderId       Int?         @map("sender_id")
+  content        String       @db.Text
+  type           String       @default("text") @db.VarChar(255)
+  sentAt         DateTime     @default(now()) @map("sent_at") @db.Timestamp(0)
+  deliveredAt    DateTime?    @map("delivered_at") @db.Timestamp(0)
+  readAt         DateTime?    @map("read_at") @db.Timestamp(0)
+  deleted        Boolean      @default(false)
+  createdAt      DateTime?    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime?    @updatedAt @map("updated_at") @db.Timestamp(0)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sender         User?        @relation(fields: [senderId], references: [id], onUpdate: NoAction)
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("messages")
+}
+
+model NotificationChannel {
+  id                       Int                       @id @default(autoincrement())
+  name                     String                    @unique @db.VarChar(255)
+  description              String?                   @db.VarChar(255)
+  active                   Boolean                   @default(true)
+  createdAt                DateTime?                 @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt                DateTime?                 @updatedAt @map("updated_at") @db.Timestamp(0)
+  notifications            Notification[]
+  userNotificationChannels UserNotificationChannel[]
+
+  @@map("notification_channels")
+}
+
+model Notification {
+  id                      Int                 @id @default(autoincrement())
+  userId                  Int                 @map("user_id")
+  userName                String?             @map("user_name") @db.VarChar(100)
+  userLastName            String?             @map("user_last_name") @db.VarChar(100)
+  userEmail               String?             @map("user_email") @db.VarChar(100)
+  userCelPhoneCountryCode String?             @map("user_cel_phone_country_code") @db.VarChar(4)
+  userCelPhone            String?             @map("user_cel_phone") @db.VarChar(20)
+  tokenDevice             String?             @map("token_device") @db.VarChar(255)
+  messageCategoryId       Int                 @map("message_category_id")
+  notificationChannelId   Int                 @map("notification_channel_id")
+  message                 String              @db.Text
+  data                    Json?
+  type                    String?             @db.VarChar(50)
+  sendStatus              String?             @default("pending") @map("send_status") @db.VarChar(50)
+  websocketSent           Boolean             @default(false) @map("websocket_sent")
+  readStatus              String?             @map("read_status") @db.VarChar(255)
+  readAt                  DateTime?           @map("read_at") @db.Timestamp(0)
+  createdAt               DateTime?           @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt               DateTime?           @updatedAt @map("updated_at") @db.Timestamp(0)
+  senderId                Int?                @map("sender_id")
+  messageCategory         MessageCategory     @relation(fields: [messageCategoryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  notificationChannel     NotificationChannel @relation(fields: [notificationChannelId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sender                  User?               @relation("notifications_sender_idTousers", fields: [senderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user                    User                @relation("notifications_user_idTousers", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([messageCategoryId])
+  @@index([notificationChannelId])
+  @@index([senderId])
+  @@index([type])
+  @@index([userId])
+  @@map("notifications")
+}
+
+model OrderProduct {
+  id                Int               @id @default(autoincrement())
+  orderId           Int               @map("order_id")
+  productCatalogId  Int               @map("product_catalog_id")
+  quantity          Int
+  price             Decimal           @db.Decimal(10, 2)
+  total             Decimal           @db.Decimal(10, 2)
+  createdAt         DateTime?         @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt         DateTime?         @updatedAt @map("updated_at") @db.Timestamp(0)
+  order             Order             @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  productCatalog    ProductCatalog    @relation(fields: [productCatalogId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  orderProductTaxes OrderProductTax[]
+
+  @@index([orderId])
+  @@index([productCatalogId])
+  @@map("order_products")
+}
+
+model OrderProductTax {
+  id             Int          @id @default(autoincrement())
+  orderProductId Int          @map("order_product_id")
+  taxId          Int          @map("tax_id")
+  taxRate        Decimal      @map("tax_rate") @db.Decimal(5, 2)
+  createdAt      DateTime?    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime?    @updatedAt @map("updated_at") @db.Timestamp(0)
+  orderProduct   OrderProduct @relation(fields: [orderProductId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tax            Tax          @relation(fields: [taxId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([orderProductId])
+  @@index([taxId])
+  @@map("order_products_taxes")
+}
+
+model Order {
+  id              Int              @id @default(autoincrement())
+  orderNumber     String           @map("order_number") @db.VarChar(255)
+  companyId       Int              @map("company_id")
+  biddingId       Int              @map("bidding_id")
+  status          String           @default("Pending") @db.VarChar(255)
+  createdAt       DateTime?        @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt       DateTime?        @updatedAt @map("updated_at") @db.Timestamp(0)
+  biddingProducts BiddingProduct[]
+  orderProducts   OrderProduct[]
+  bidding         Bidding          @relation(fields: [biddingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([biddingId])
+  @@index([companyId])
+  @@map("orders")
+}
+
+model PasswordResetToken {
+  email     String    @id @db.VarChar(255)
+  token     String    @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+
+  @@map("password_reset_tokens")
+}
+
+model PaymentStatus {
+  id        Int       @id @default(autoincrement())
+  status    String    @unique @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  payments  Payment[]
+
+  @@map("payment_statuses")
+}
+
+model PaymentTerm {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(50)
+  description String?   @db.Text
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  quotes      Quote[]
+
+  @@map("payment_terms")
+}
+
+model Payment {
+  id              Int           @id @default(autoincrement())
+  userId          Int           @map("user_id")
+  amount          Decimal       @db.Decimal(10, 2)
+  paymentMethod   String        @map("payment_method") @db.VarChar(255)
+  paymentStatusId Int           @map("payment_status_id")
+  paymentId       String?       @map("payment_id") @db.VarChar(255)
+  createdAt       DateTime?     @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt       DateTime?     @updatedAt @map("updated_at") @db.Timestamp(0)
+  paymentStatus   PaymentStatus @relation(fields: [paymentStatusId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([paymentStatusId])
+  @@index([userId])
+  @@map("payments")
+}
+
+model PlanFeature {
+  id        Int       @id @default(autoincrement())
+  planId    Int       @map("plan_id")
+  featureId Int       @map("feature_id")
+  supported Boolean
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  feature   Feature   @relation(fields: [featureId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  plan      Plan      @relation(fields: [planId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([featureId])
+  @@index([planId])
+  @@map("plan_features")
+}
+
+model Plan {
+  id                Int            @id @default(autoincrement())
+  title             String         @db.VarChar(255)
+  subtitle          String?        @db.VarChar(255)
+  description       String?        @db.Text
+  priceBuyerMonth   Decimal?       @map("price_buyer_month") @db.Decimal(10, 2)
+  priceBuyerAnnual  Decimal?       @map("price_buyer_annual") @db.Decimal(10, 2)
+  priceSellerMonth  Decimal?       @map("price_seller_month") @db.Decimal(10, 2)
+  priceSellerAnnual Decimal?       @map("price_seller_annual") @db.Decimal(10, 2)
+  createdAt         DateTime?      @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt         DateTime?      @updatedAt @map("updated_at") @db.Timestamp(0)
+  default           Boolean        @default(false)
+  custom            Boolean        @default(false)
+  planFeatures      PlanFeature[]
+  subscriptions     Subscription[]
+
+  @@map("plans")
+}
+
+model PostLike {
+  id        Int       @id @default(autoincrement())
+  postId    Int       @map("post_id")
+  userId    Int       @map("user_id")
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@map("post_likes")
+}
+
+model Post {
+  id             Int            @id @default(autoincrement())
+  userId         Int            @map("user_id")
+  companyId      Int            @map("company_id")
+  content        String         @db.Text
+  image          String?        @db.VarChar(255)
+  visibility     PostVisibility @default(public)
+  originalPostId Int?           @map("original_post_id")
+  likesCount     Int            @default(0) @map("likes_count")
+  commentsCount  Int            @default(0) @map("comments_count")
+  sharesCount    Int            @default(0) @map("shares_count")
+  createdAt      DateTime?      @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime?      @updatedAt @map("updated_at") @db.Timestamp(0)
+  comments       Comment[]
+  postLikes      PostLike[]
+  company        Company        @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  originalPost   Post?          @relation("postsToposts", fields: [originalPostId], references: [id], onUpdate: NoAction)
+  reposts        Post[]         @relation("postsToposts")
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([companyId])
+  @@index([originalPostId])
+  @@index([userId])
+  @@map("posts")
+}
+
+model ProductCatalog {
+  id                  Int                 @id @default(autoincrement())
+  companyId           Int                 @map("company_id")
+  productTypeId       Int                 @map("product_type_id")
+  createdBy           Int                 @map("created_by")
+  updatedBy           Int?                @map("updated_by")
+  name                String              @db.VarChar(5000)
+  brand               String?             @db.VarChar(255)
+  internalCode        String              @map("internal_code") @db.VarChar(255)
+  externalCode        String?             @map("external_code") @db.VarChar(255)
+  satKey              String?             @map("sat_key") @db.VarChar(255)
+  description         String?             @db.Text
+  keywords            Json?
+  technicalSheet      String?             @map("technical_sheet") @db.VarChar(255)
+  image               String?             @db.VarChar(255)
+  price               Decimal             @db.Decimal(10, 2)
+  stockQuantity       BigInt              @default(0) @map("stock_quantity")
+  unitId              Int                 @map("unit_id")
+  createdAt           DateTime?           @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt           DateTime?           @updatedAt @map("updated_at") @db.Timestamp(0)
+  biddingProducts     BiddingProduct[]
+  orderProducts       OrderProduct[]
+  company             Company             @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  creator             User                @relation("product_catalogs_created_byTousers", fields: [createdBy], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  productType         ProductType         @relation(fields: [productTypeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  unit                Unit                @relation(fields: [unitId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  updater             User?               @relation("product_catalogs_updated_byTousers", fields: [updatedBy], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  productCatalogTaxes ProductCatalogTax[]
+  quoteProducts       QuoteProduct[]
+
+  @@unique([companyId, externalCode])
+  @@unique([companyId, internalCode])
+  @@index([createdBy])
+  @@index([productTypeId])
+  @@index([unitId])
+  @@index([updatedBy])
+  @@map("product_catalogs")
+}
+
+model ProductCatalogTax {
+  id               Int            @id @default(autoincrement())
+  productCatalogId Int            @map("product_catalog_id")
+  taxId            Int            @map("tax_id")
+  taxRate          Decimal        @map("tax_rate") @db.Decimal(8, 2)
+  createdAt        DateTime?      @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt        DateTime?      @updatedAt @map("updated_at") @db.Timestamp(0)
+  productCatalog   ProductCatalog @relation(fields: [productCatalogId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tax              Tax            @relation(fields: [taxId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([productCatalogId, taxId])
+  @@index([taxId])
+  @@map("product_catalogs_taxes")
+}
+
+model ProductType {
+  id              Int              @id @default(autoincrement())
+  name            String           @db.VarChar(255)
+  createdAt       DateTime?        @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt       DateTime?        @updatedAt @map("updated_at") @db.Timestamp(0)
+  categories      Category[]
+  productCatalogs ProductCatalog[]
+
+  @@map("product_types")
+}
+
+model ProfileView {
+  id        Int       @id @default(autoincrement())
+  viewerId  Int       @map("viewer_id")
+  viewedId  Int       @map("viewed_id")
+  viewedAt  DateTime  @default(now()) @map("viewed_at") @db.Timestamp(0)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  viewed    User      @relation("profile_views_viewed_idTousers", fields: [viewedId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  viewer    User      @relation("profile_views_viewer_idTousers", fields: [viewerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([viewerId, viewedId, viewedAt])
+  @@index([viewedId])
+  @@index([viewerId, viewedId, viewedAt])
+  @@map("profile_views")
+}
+
+model QuoteProduct {
+  id                Int               @id @default(autoincrement())
+  quoteId           Int               @map("quote_id")
+  productCatalogId  Int               @map("product_catalog_id")
+  biddingProductId  Int?              @map("bidding_product_id")
+  quantity          Int
+  price             Decimal           @db.Decimal(15, 2)
+  totalTaxes        Decimal           @map("total_taxes") @db.Decimal(15, 2)
+  total             Decimal           @db.Decimal(15, 2)
+  createdAt         DateTime?         @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt         DateTime?         @updatedAt @map("updated_at") @db.Timestamp(0)
+  biddingProduct    BiddingProduct?   @relation(fields: [biddingProductId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  productCatalog    ProductCatalog    @relation(fields: [productCatalogId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  quote             Quote             @relation(fields: [quoteId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  quoteProductTaxes QuoteProductTax[]
+  selectedQuotes    SelectedQuote[]
+
+  @@index([biddingProductId])
+  @@index([productCatalogId])
+  @@index([quoteId])
+  @@map("quote_products")
+}
+
+model QuoteProductTax {
+  id             Int          @id @default(autoincrement())
+  quoteProductId Int          @map("quote_product_id")
+  taxId          Int          @map("tax_id")
+  taxRate        Decimal      @map("tax_rate") @db.Decimal(15, 2)
+  createdAt      DateTime?    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime?    @updatedAt @map("updated_at") @db.Timestamp(0)
+  quoteProduct   QuoteProduct @relation(fields: [quoteProductId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tax            Tax          @relation(fields: [taxId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([quoteProductId])
+  @@index([taxId])
+  @@map("quote_products_taxes")
+}
+
+model Quote {
+  id                 Int            @id @default(autoincrement())
+  biddingId          Int            @map("bidding_id")
+  quoteNumber        String         @map("quote_number") @db.VarChar(255)
+  userId             Int            @map("user_id")
+  companyId          Int            @map("company_id")
+  subtotal           Decimal        @db.Decimal(15, 2)
+  totalTaxes         Decimal        @map("total_taxes") @db.Decimal(15, 2)
+  total              Decimal        @db.Decimal(15, 2)
+  currency           String         @db.VarChar(5)
+  paymentStatus      String         @default("pending") @map("payment_status") @db.VarChar(255)
+  deliveryStatus     String         @default("pending") @map("delivery_status") @db.VarChar(255)
+  costShipping       Decimal?       @map("cost_shipping") @db.Decimal(15, 2)
+  status             String         @default("active") @db.VarChar(255)
+  deliveryDate       DateTime?      @map("delivery_date") @db.Date
+  deliveryType       String?        @map("delivery_type") @db.VarChar(255)
+  shippingAddress    String?        @map("shipping_address") @db.Text
+  createdAt          DateTime?      @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt          DateTime?      @updatedAt @map("updated_at") @db.Timestamp(0)
+  paymentTermId      Int?           @map("payment_term_id")
+  customPaymentTerms String?        @map("custom_payment_terms") @db.Text
+  quoteProducts      QuoteProduct[]
+  bidding            Bidding        @relation(fields: [biddingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  company            Company        @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  paymentTerm        PaymentTerm?   @relation(fields: [paymentTermId], references: [id], onUpdate: NoAction)
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([biddingId])
+  @@index([companyId])
+  @@index([paymentTermId])
+  @@index([userId])
+  @@map("quotes")
+}
+
+model Rating {
+  id        Int       @id @default(autoincrement())
+  companyId Int       @map("company_id")
+  userId    Int       @map("user_id")
+  biddingId Int?      @map("bidding_id")
+  rating    Int
+  comment   String?   @db.Text
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  bidding   Bidding?  @relation(fields: [biddingId], references: [id], onUpdate: NoAction)
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([biddingId])
+  @@index([companyId])
+  @@index([userId])
+  @@map("ratings")
+}
+
+model Role {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(255)
+  description String    @db.VarChar(255)
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  users       User[]
+
+  @@map("roles")
+}
+
+model SelectedQuote {
+  id                 Int          @id @default(autoincrement())
+  quoteProductId     Int          @map("quote_product_id")
+  justification      String       @db.VarChar(255)
+  otherJustification String?      @map("other_justification") @db.VarChar(255)
+  createdAt          DateTime?    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt          DateTime?    @updatedAt @map("updated_at") @db.Timestamp(0)
+  quoteProduct       QuoteProduct @relation(fields: [quoteProductId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([quoteProductId])
+  @@map("selected_quotes")
+}
+
+model SellerGeographicScope {
+  id        Int                        @id @default(autoincrement())
+  sellerId  Int                        @map("seller_id")
+  countryId Int                        @map("country_id")
+  stateId   Int?                       @map("state_id")
+  cityName  String?                    @map("city_name") @db.VarChar(255)
+  scopeType SellerGeographicScopeType  @map("scope_type")
+  level     SellerGeographicScopeLevel
+  latitude  Decimal?                   @db.Decimal(10, 8)
+  longitude Decimal?                   @db.Decimal(11, 8)
+  createdAt DateTime?                  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime?                  @updatedAt @map("updated_at") @db.Timestamp(0)
+  country   Country                    @relation(fields: [countryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  seller    User                       @relation(fields: [sellerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  state     State?                     @relation(fields: [stateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([sellerId, countryId, stateId, cityName, level])
+  @@index([countryId])
+  @@index([stateId])
+  @@map("seller_geographic_scopes")
+}
+
+model State {
+  id                     Int                     @id @default(autoincrement())
+  countryId              Int                     @map("country_id")
+  name                   String                  @db.VarChar(255)
+  isoCode                String?                 @map("iso_code") @db.VarChar(255)
+  createdAt              DateTime?               @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt              DateTime?               @updatedAt @map("updated_at") @db.Timestamp(0)
+  boundaryCoordinates    Json?                   @map("boundary_coordinates")
+  sellerGeographicScopes SellerGeographicScope[]
+  country                Country                 @relation(fields: [countryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  userAddresses          UserAddress[]
+
+  @@index([countryId])
+  @@map("states")
+}
+
+model SubscriptionStatus {
+  id        Int       @id @default(autoincrement())
+  status    String    @unique @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@map("subscription_statuses")
+}
+
+model Subscription {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  planId    Int       @map("plan_id")
+  startDate DateTime  @map("start_date") @db.Date
+  endDate   DateTime? @map("end_date") @db.Date
+  status    String    @db.VarChar(255)
+  isDefault Boolean   @default(false) @map("is_default")
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  plan      Plan      @relation(fields: [planId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([planId])
+  @@index([userId, isDefault, status])
+  @@map("subscriptions")
+}
+
+model Tax {
+  id                  Int                 @id @default(autoincrement())
+  country             String              @db.VarChar(255)
+  taxName             String              @map("tax_name") @db.VarChar(255)
+  taxRate             Decimal?            @map("tax_rate") @db.Decimal(5, 2)
+  description         String?             @db.Text
+  createdAt           DateTime?           @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt           DateTime?           @updatedAt @map("updated_at") @db.Timestamp(0)
+  biddingProductTaxes BiddingProductTax[]
+  orderProductTaxes   OrderProductTax[]
+  productCatalogTaxes ProductCatalogTax[]
+  quoteProductTaxes   QuoteProductTax[]
+
+  @@map("taxes")
+}
+
+model Unit {
+  id              Int              @id @default(autoincrement())
+  key             String           @db.VarChar(255)
+  name            String           @db.VarChar(255)
+  abbreviation    String           @db.VarChar(255)
+  productTypeId   Int              @default(1) @map("product_type_id")
+  createdAt       DateTime?        @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt       DateTime?        @updatedAt @map("updated_at") @db.Timestamp(0)
+  productCatalogs ProductCatalog[]
+
+  @@map("units")
+}
+
+model UserAddress {
+  id             Int       @id @default(autoincrement())
+  userId         Int       @map("user_id")
+  countryId      Int       @map("country_id")
+  stateId        Int       @map("state_id")
+  country        String    @db.VarChar(100)
+  state          String    @db.VarChar(100)
+  city           String    @db.VarChar(100)
+  street         String    @db.VarChar(255)
+  outdoorNumber  String    @map("outdoor_number") @db.VarChar(50)
+  interiorNumber String?   @map("interior_number") @db.VarChar(50)
+  zipCode        String    @map("zip_code") @db.VarChar(20)
+  addressType    String    @default("office") @map("address_type") @db.VarChar(50)
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamp(0)
+  biddings       Bidding[]
+  countryRef     Country   @relation(fields: [countryId], references: [id], onUpdate: NoAction)
+  stateRef       State     @relation(fields: [stateId], references: [id], onUpdate: NoAction)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([countryId])
+  @@index([stateId])
+  @@index([userId])
+  @@map("user_addresses")
+}
+
+model UserCategory {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  categoryId Int       @map("category_id")
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([categoryId])
+  @@index([userId])
+  @@map("user_categories")
+}
+
+model UserMessageCategory {
+  id                 Int             @id @default(autoincrement())
+  userId             Int             @map("user_id")
+  messageCategoryId  Int             @map("message_category_id")
+  subscriptionStatus Boolean         @default(true) @map("subscription_status")
+  createdAt          DateTime?       @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt          DateTime?       @updatedAt @map("updated_at") @db.Timestamp(0)
+  messageCategory    MessageCategory @relation(fields: [messageCategoryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([messageCategoryId])
+  @@index([userId])
+  @@map("user_message_categories")
+}
+
+model UserNotificationChannel {
+  id                    Int                 @id @default(autoincrement())
+  userId                Int                 @map("user_id")
+  notificationChannelId Int                 @map("notification_channel_id")
+  subscriptionStatus    Boolean             @default(true) @map("subscription_status")
+  createdAt             DateTime?           @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt             DateTime?           @updatedAt @map("updated_at") @db.Timestamp(0)
+  notificationChannel   NotificationChannel @relation(fields: [notificationChannelId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([notificationChannelId])
+  @@index([userId])
+  @@map("user_notification_channels")
+}
+
+model UserType {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(255)
+  description String    @db.VarChar(255)
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  users       User[]
+
+  @@map("user_types")
+}
+
+model User {
+  id                             Int                       @id @default(autoincrement())
+  companyId                      Int?                      @map("company_id")
+  userTypeId                     Int?                      @map("user_type_id")
+  name                           String                    @db.VarChar(100)
+  lastName                       String                    @map("last_name") @db.VarChar(100)
+  avatar                         String?                   @db.VarChar(255)
+  email                          String                    @unique @db.VarChar(255)
+  emailVerifiedAt                DateTime?                 @map("email_verified_at") @db.Timestamp(0)
+  password                       String                    @db.VarChar(60)
+  passwordExpiry                 DateTime?                 @map("password_expiry") @db.Timestamp(0)
+  rememberToken                  String?                   @map("remember_token") @db.VarChar(100)
+  phoneCountryCode               String?                   @map("phone_country_code") @db.VarChar(4)
+  phone                          String?                   @db.VarChar(15)
+  celPhoneCountryCode            String?                   @map("cel_phone_country_code") @db.VarChar(4)
+  celPhone                       String?                   @map("cel_phone") @db.VarChar(15)
+  infoCelPhone                   String?                   @map("info_cel_phone") @db.VarChar(255)
+  infoCelPhoneCountryCode        String?                   @map("info_cel_phone_country_code") @db.VarChar(10)
+  twoFactorAuthenticationEnabled Boolean                   @default(false) @map("two_factor_authentication_enabled")
+  twoFactorAuthSuggestionEnabled Boolean                   @default(true) @map("two_factor_auth_suggestion_enabled")
+  pendingApproval                Boolean                   @default(false) @map("pending_approval")
+  createdAt                      DateTime?                 @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt                      DateTime?                 @updatedAt @map("updated_at") @db.Timestamp(0)
+  roleId                         Int?                      @map("role_id")
+  verificationToken              String?                   @map("verification_token") @db.VarChar(255)
+  language                       String                    @default("es") @db.VarChar(5)
+  accountStatus                  UserAccountStatus         @default(active) @map("account_status")
+  deactivationReason             String?                   @map("deactivation_reason") @db.Text
+  deactivatedAt                  DateTime?                 @map("deactivated_at") @db.Timestamp(0)
+  biddingUserStatuses            BiddingUserStatus[]
+  createdBiddings                Bidding[]                 @relation("biddings_created_byTousers")
+  updatedBiddings                Bidding[]                 @relation("biddings_updated_byTousers")
+  comments                       Comment[]
+  conversationUsers              ConversationUser[]
+  receivedFriendRequests         FriendRequest[]           @relation("friend_requests_receiver_idTousers")
+  sentFriendRequests             FriendRequest[]           @relation("friend_requests_sender_idTousers")
+  friendshipsAsFriend            Friendship[]              @relation("friendships_friend_idTousers")
+  friendshipsAsUser              Friendship[]              @relation("friendships_user_idTousers")
+  messages                       Message[]
+  sentNotifications              Notification[]            @relation("notifications_sender_idTousers")
+  notifications                  Notification[]            @relation("notifications_user_idTousers")
+  payments                       Payment[]
+  postLikes                      PostLike[]
+  posts                          Post[]
+  createdProductCatalogs         ProductCatalog[]          @relation("product_catalogs_created_byTousers")
+  updatedProductCatalogs         ProductCatalog[]          @relation("product_catalogs_updated_byTousers")
+  profileViewsReceived           ProfileView[]             @relation("profile_views_viewed_idTousers")
+  profileViewsMade               ProfileView[]             @relation("profile_views_viewer_idTousers")
+  quotes                         Quote[]
+  ratings                        Rating[]
+  sellerGeographicScopes         SellerGeographicScope[]
+  subscriptions                  Subscription[]
+  userAddresses                  UserAddress[]
+  userCategories                 UserCategory[]
+  userMessageCategories          UserMessageCategory[]
+  userNotificationChannels       UserNotificationChannel[]
+  company                        Company?                  @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  role                           Role?                     @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  userType                       UserType?                 @relation(fields: [userTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([companyId])
+  @@index([roleId])
+  @@index([userTypeId])
+  @@map("users")
+}
+
+enum FriendRequestStatus {
+  pending
+  accepted
+  rejected
+
+  @@map("friend_requests_status")
+}
+
+enum PostVisibility {
+  public
+  allies
+
+  @@map("posts_visibility")
+}
+
+enum SellerGeographicScopeType {
+  include
+  exclude
+
+  @@map("seller_geographic_scopes_scope_type")
+}
+
+enum SellerGeographicScopeLevel {
+  country
+  state
+  city
+
+  @@map("seller_geographic_scopes_level")
+}
+
+enum UserAccountStatus {
+  active
+  deactivated
+
+  @@map("users_account_status")
+}
