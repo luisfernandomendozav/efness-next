@@ -15,6 +15,36 @@ Entry format:
 
 ---
 
+## 2026-08-29 — Migrate user management page (`9bf1d5c`)
+**Commit:** feat: migrate user management page from legacy app
+
+Port of `/user-management/users` (header menu: Usuarios; superadmin only).
+Legacy sources: `efness-frontend/src/app/modules/apps/user-management/` and
+`UserController` + `SuperAdminMiddleware` in the backend.
+
+- Authorization: page redirects non-superadmins to /dashboard; `src/proxy.ts`
+  already gated the route. Actions re-check roleId 1 server-side.
+- Table: name/email + avatar, company, user type badge, two-factor
+  Enabled/Disabled badge, joined date; search over name/lastName/email;
+  10/page.
+- Create/edit dialog with the legacy modal's 4 fields (first name, last
+  name, email, user type). New users get `role_id 2` (admin) like the legacy
+  default, email pre-verified, and — since the legacy modal has NO password
+  field — a random bcrypt-hashed password; they must go through password
+  reset to log in (reset flow not built yet). Duplicate email → friendly
+  "email_taken" error (P2002).
+- Delete: AlertDialog confirm, self-deletion refused, cascades per schema
+  (posts, biddings, etc. — same as legacy CASCADE FKs).
+- Deviation: legacy listed only users of the superadmin's own company; our
+  superadmin has no company, so it lists ALL users except self.
+
+Not ported: bulk selection/delete, the commented-out legacy filters
+(user type / last login — never enabled in legacy), account deactivation,
+2FA toggling, avatar upload.
+
+WITH THIS, THE ENTIRE SIDEBAR/SHELL IS FUNCTIONAL: login, dashboard feed,
+biddings list, catalog, searcher, reports, allies, user management.
+
 ## 2026-08-29 — Migrate my-network allies page (`3ddebd2`)
 **Commit:** feat: migrate my-network allies page from legacy app
 
