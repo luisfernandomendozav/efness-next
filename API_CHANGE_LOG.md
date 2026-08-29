@@ -15,6 +15,44 @@ Entry format:
 
 ---
 
+## 2026-08-28 — Migrate dashboard social feed from legacy app (`597e906`)
+**Commit:** feat: migrate dashboard social feed from legacy app
+
+First functional port of the legacy dashboard (a social feed, not a KPI
+dashboard — legacy source: `efness-frontend/src/app/pages/dashboard/`).
+
+- `src/server/feed.ts` — Prisma data layer. `getFeed` replicates the Laravel
+  `PostService::getFeed` visibility rule: public posts + allies-only posts
+  when the author is an ally (friendships table, both directions) or self.
+  `getPotentialAllies` replicates the suggestion logic (exclude self, allies,
+  pending friend requests either direction; active accounts only; take 9).
+- `src/server/feed-actions.ts` — server actions: `createPostAction`,
+  `toggleLikeAction`, `addCommentAction`, `deletePostAction` (own posts only),
+  `sendAllyRequestAction`. Like/comment keep the denormalized `likes_count` /
+  `comments_count` columns in sync via transactions (legacy relies on them).
+- `src/components/dashboard/` — `post-composer` (text + public/allies
+  visibility), `post-card` (relative timestamps via Intl.RelativeTimeFormat,
+  like/comment/delete, shared-post rendering), `potential-allies`.
+- Dashboard page is a server component; pagination is `?pages=N` rendering
+  the first N×10 posts with a "Load more" link (no client feed state).
+- App shell restyled to legacy: sidebar `#1D2747` with the legacy menu
+  (Home `/dashboard`, Biddings `/biddings`, Catalog `/products/catalog`,
+  Searcher `/advanced-search/users`, Reports `/reports`, Allies
+  `/my-network`, Users `/user-management/users` for superadmin only); header
+  shows localized date, user name/email, and Seller/Buyer badge.
+
+Reference notes / not yet ported:
+- Image upload on posts (needs a storage decision — Vercel Blob or S3;
+  legacy stored files on the Laravel disk under `posts/{user_id}/`).
+- Share/repost modal, comment edit/delete, post edit, infinite scroll
+  (replaced by Load more), advertisements widget, websocket-driven ally
+  suggestions, notifications/chat header icons.
+- Sidebar menu routes other than /dashboard 404 until those pages are ported.
+- Posts require a `company_id`; users without a company (e.g. the superadmin
+  created 2026-08-28) get a translated "no company" error from the composer.
+- New i18n keys added to `messages/es.json` only; other locales fall back to
+  the English key text.
+
 ## 2026-08-28 — Port legacy eFness theme to login and global styles (`5b4c41d`)
 **Commit:** feat: port legacy eFness theme to login and global styles
 
