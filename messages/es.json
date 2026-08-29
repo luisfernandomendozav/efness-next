@@ -1058,5 +1058,8 @@
   "No results found": "No se encontraron resultados",
   "Please write something before posting.": "Escribe algo antes de publicar.",
   "Your user has no company assigned, so it cannot publish posts.": "Tu usuario no tiene una empresa asignada, por lo que no puede publicar.",
-  "Internal code already exists": "El código interno ya existe"
+  "Internal code already exists": "El código interno ya existe",
+  "Overdue requisitions": "Requisiciones vencidas",
+  "New clients with active biddings": "Nuevos clientes con requisiciones activas",
+  "Companies": "Empresas"
 }

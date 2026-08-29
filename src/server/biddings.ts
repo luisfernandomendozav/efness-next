@@ -39,7 +39,7 @@ function searchWhere(search: string): Prisma.BiddingWhereInput {
   };
 }
 
-async function sellerActiveExtras(
+export async function sellerActiveExtras(
   viewer: BiddingsViewer,
 ): Promise<Prisma.BiddingWhereInput[]> {
   const [categories, scopes] = await Promise.all([
