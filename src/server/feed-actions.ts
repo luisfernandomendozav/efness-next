@@ -112,4 +112,5 @@ export async function sendAllyRequestAction(receiverId: number) {
     update: { status: "pending" },
   });
   revalidatePath("/dashboard");
+  revalidatePath("/my-network");
 }

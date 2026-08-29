@@ -124,7 +124,7 @@ export type FeedPost = FeedResult["posts"][number];
 
 // Réplica de FriendshipService::getPotentialAllies: usuarios activos que no
 // son el propio usuario, ni aliados actuales, ni tienen solicitud pendiente.
-export async function getPotentialAllies(viewerId: number) {
+export async function getPotentialAllies(viewerId: number, limit = 9) {
   const [friendIds, pending] = await Promise.all([
     getFriendIds(viewerId),
     db.friendRequest.findMany({
@@ -152,7 +152,7 @@ export async function getPotentialAllies(viewerId: number) {
       userType: { select: { name: true } },
     },
     orderBy: { createdAt: "desc" },
-    take: 9,
+    take: limit,
   });
 
   return users.map((u) => ({
