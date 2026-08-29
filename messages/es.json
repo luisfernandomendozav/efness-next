@@ -1061,5 +1061,6 @@
   "Internal code already exists": "El código interno ya existe",
   "Overdue requisitions": "Requisiciones vencidas",
   "New clients with active biddings": "Nuevos clientes con requisiciones activas",
-  "Companies": "Empresas"
+  "Companies": "Empresas",
+  "The email has already been taken.": "El correo electrónico ya está registrado."
 }
