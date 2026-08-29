@@ -15,6 +15,39 @@ Entry format:
 
 ---
 
+## 2026-08-28 — Ops: fix production login (env vars only, no code change)
+**Commit:** none — Vercel environment + local `.env` changes
+
+Login on the new app failed for two stacked reasons, both environment config:
+
+1. **`AUTH_URL` pointed at the legacy site.** `AUTH_URL="https://app.efness.com"`
+   (in both Vercel prod and local `.env`) made NextAuth's middleware rewrite the
+   request origin, so every redirect from `src/proxy.ts` (e.g. to `/login`)
+   landed on `app.efness.com` — which is the **legacy SPA on Netlify** talking
+   to the legacy Laravel API (`api.efness.com`) and its MySQL DB. New-app
+   accounts don't exist there. Fixed: Vercel prod `AUTH_URL` and
+   `NEXT_PUBLIC_APP_URL` now `https://efness-next.vercel.app`; local `.env`
+   uses `http://localhost:3000`.
+2. **Broken `DATABASE_URL(_POOLED)` in Vercel prod.** Prisma failed with
+   "Can't reach database server at `base`" — the stored value was malformed
+   (bad paste). Replaced both with the working Neon URLs
+   (`ep-flat-queen-af2oe5q2`, db `neondb`).
+
+Reference notes:
+- Verified end-to-end after redeploy: credentials login on
+  `https://efness-next.vercel.app` returns a session cookie and `/dashboard`
+  serves 200.
+- When `app.efness.com` DNS is cut over from Netlify to Vercel, set
+  `AUTH_URL`/`NEXT_PUBLIC_APP_URL` back to `https://app.efness.com`.
+- `AUTH_TRUST_HOST` is set; removing `AUTH_URL` entirely is also valid and
+  survives domain changes. Preview env currently has no `AUTH_URL` (inferred
+  from headers).
+- Vercel env values are "sensitive" (write-only): `vercel env pull` returns
+  empty strings for them — that is not a bug.
+- Superadmin user created 2026-08-28 directly in Neon: id from `users` table,
+  email `luisfernandomendozav@gmail.com`, `role_id 1` (superadmin), bcrypt
+  12-round hash, email pre-verified, 2FA off.
+
 ## 2026-08-28 — One-off MySQL → Postgres ETL scripts (`2a862ae`)
 **Commit:** chore: add one-off MySQL to Postgres ETL scripts
 
