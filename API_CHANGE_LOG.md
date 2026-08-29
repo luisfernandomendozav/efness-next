@@ -15,6 +15,36 @@ Entry format:
 
 ---
 
+## 2026-08-28 — Port legacy eFness theme to login and global styles (`0aea29d`)
+**Commit:** feat: port legacy eFness theme to login and global styles
+
+The app looked unstyled because `globals.css` was the create-next-app stub —
+the shadcn/ui components reference theme tokens (`bg-primary`, `bg-card`,
+`border-input`, `text-destructive`…) that were never defined.
+
+- `src/app/globals.css`: full token set as Tailwind v4 `@theme inline` vars,
+  colors ported from the legacy Metronic theme
+  (`efness-frontend/src/_metronic/assets/sass/core/components/_variables.scss`):
+  primary/green `#7FE361`, destructive `#F8285A` (light bg `#FFEEF3`), border
+  `#DBDFE9`, foreground `#071437`, muted-fg `#78829D`. Auth gradient vars
+  `--efness-navy-top: #2B385F` / `--efness-navy-bottom: #152248`.
+- `dark:` variant scoped to an explicit `.dark` class via `@custom-variant` —
+  otherwise Tailwind v4 follows OS `prefers-color-scheme` and the shadcn
+  `dark:bg-input/30` styles kick in on dark-mode systems (app is light-only).
+- Font switched Geist → Source Sans 3 (`--font-source-sans`), matching legacy.
+- `src/app/(auth)/layout.tsx`: navy gradient full-screen bg + centered logo
+  (`public/efness-logo-dark.png`, copied from legacy repo, 231×61 shown 45px).
+- `src/app/(auth)/login/page.tsx`: rebuilt to match legacy `Login.tsx` — no
+  card, light heading, white inputs, green CTA, pink error box, register row.
+  All strings already existed in `messages/*.json`.
+- `src/app/favicon.ico`: replaced with the legacy favicon.
+
+Reference notes:
+- `/register` and `/forgot-password` links exist but those pages are NOT
+  built yet — they 404 until ported.
+- Legacy design source of truth: `efness-frontend/src/app/modules/auth/components/Login.tsx`.
+- Verified by headless-Chrome screenshot against the legacy screenshot.
+
 ## 2026-08-28 — Ops: fix production login (env vars only, no code change)
 **Commit:** none — Vercel environment + local `.env` changes
 
