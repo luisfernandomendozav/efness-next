@@ -6,7 +6,7 @@ import { Search } from "lucide-react";
 import { useT } from "@/i18n/use-t";
 import { Input } from "@/components/ui/input";
 
-export function BiddingsSearch() {
+export function TableSearch({ placeholder }: { placeholder: string }) {
   const t = useT();
   const router = useRouter();
   const pathname = usePathname();
@@ -36,7 +36,7 @@ export function BiddingsSearch() {
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder={t("Search bidding")}
+        placeholder={t(placeholder)}
         className="pl-9"
       />
     </div>

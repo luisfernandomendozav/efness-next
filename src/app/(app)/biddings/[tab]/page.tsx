@@ -10,7 +10,7 @@ import {
   type BiddingsViewer,
   type StatusVariant,
 } from "@/server/biddings";
-import { BiddingsSearch } from "@/components/biddings/biddings-search";
+import { TableSearch } from "@/components/table-search";
 import { DeleteBiddingButton } from "@/components/biddings/delete-bidding-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -104,7 +104,7 @@ export default async function BiddingsTabPage({
       </div>
       <Card>
         <CardContent className="space-y-4">
-          <BiddingsSearch />
+          <TableSearch placeholder="Search bidding" />
           <Table>
             <TableHeader>
               <TableRow>
