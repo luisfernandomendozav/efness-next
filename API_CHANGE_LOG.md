@@ -15,6 +15,39 @@ Entry format:
 
 ---
 
+## 2026-08-28 — Migrate biddings list page (`b6e842b`)
+**Commit:** feat: migrate biddings list page from legacy app
+
+Port of `/biddings` (Spanish: Requisiciones). Legacy sources:
+`efness-frontend/src/app/modules/apps/biddings/` and
+`efness-backend/app/Repositories/BiddingRepository.php`.
+
+- Routes: `/biddings` redirects to `/biddings/active`; `/biddings/[tab]` with
+  tabs by role — buyer: active/assigned/closed; seller: active/quoted/closed;
+  superadmin: all four.
+- `src/server/biddings.ts` — Prisma queries replicating the repository per
+  role and tab, including the seller "active" filters: no
+  `bidding_company_statuses` row for their company, other companies only,
+  category match (`user_categories`), and include-type geographic scopes
+  matched against the delivery address by country/state/city IDs.
+- Status display replicates `BiddingStatusCell.tsx`: company-specific status
+  overrides global, expired deadline without company status shows "defeated"
+  (sellers), seller sees "quoted" as "open" on the active tab, and the
+  generated_orders/unassigned relabeling on the closed tab.
+- Search (bidding number, creator name, company, city — OR, insensitive),
+  pagination 15/page, delete with AlertDialog (buyer own-company or
+  superadmin, active tab only).
+
+Reference notes / not yet ported:
+- Bidding detail view ("See requisition"), quote comparison, create-bidding
+  wizard ("Add bidding" button omitted), orders/ratings actions, bulk delete.
+  The Actions column only offers delete until those exist.
+- Seller keyword-vs-product-catalog matching (part of the legacy category
+  OR-condition) is NOT implemented — only direct category matching. Exclude-
+  type geographic scopes are ignored (only include scopes filter).
+- Superadmin behavior is new: legacy had no explicit superadmin branch; here
+  it sees all biddings per status because it has no company.
+
 ## 2026-08-28 — Migrate dashboard social feed from legacy app (`597e906`)
 **Commit:** feat: migrate dashboard social feed from legacy app
 
