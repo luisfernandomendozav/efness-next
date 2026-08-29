@@ -15,6 +15,36 @@ Entry format:
 
 ---
 
+## 2026-08-28 — Migrate advanced search page (`40637be`)
+**Commit:** feat: migrate advanced search page from legacy app
+
+Port of `/advanced-search/users` (sidebar: Buscador). Legacy sources:
+`efness-frontend/src/app/modules/apps/user-search/` and
+`efness-backend/app/Repositories/UserRepository.php`
+(`searchWithRelationsExcept`).
+
+- `src/server/search.ts` — `searchUsers` (target type is the inverse of the
+  viewer's: seller→buyers, buyer→sellers; superadmin sees both; excludes own
+  company and self; search over name/lastName/email; filters by category
+  membership, company, and company country/state/city) and `searchProducts`
+  (other companies' catalogs; name search; product type/brand/company/geo
+  filters). `getSearchLookups` feeds the filter selects (categories,
+  companies, product types, distinct company locations for cascading
+  country→state→city).
+- `src/components/search/search-filters.tsx` — client filter bar: mode
+  toggle (Compradores|Proveedores / Productos), search box, conditional
+  filters per mode, cascading geo selects, Reset/Apply pushing URL params.
+- Results tables replicate legacy columns; ratings show `x.x/5 (count)`.
+
+Reference notes / not yet ported:
+- `useUserConfig` geographic-scope matching (seller_geographic_scopes vs
+  buyer addresses, include/exclude) — checkbox omitted for now.
+- Monthly search limit feature-gate ("Search users/products (only 4)") and
+  the plan-upgrade alert; profile-view tracking (`profile_views`) and the
+  CompanyProfileModal on row click.
+- Legacy aggregated geo filter options from search RESULTS; this port uses
+  distinct company locations from the DB instead (broader but simpler).
+
 ## 2026-08-28 — Migrate product catalog page (`9ee3b31`)
 **Commit:** feat: migrate product catalog page from legacy app
 
