@@ -15,6 +15,37 @@ Entry format:
 
 ---
 
+## 2026-08-28 — Migrate product catalog page (`9ee3b31`)
+**Commit:** feat: migrate product catalog page from legacy app
+
+Port of `/products/catalog` (sidebar: Catálogo). Legacy sources:
+`efness-frontend/src/app/modules/apps/products/` and
+`efness-backend/app/Repositories/ProductCatalogRepository.php`.
+
+- `src/server/products.ts` — company-scoped product listing with search over
+  name, internal/external code, SAT key, brand (OR, insensitive), 10/page.
+  Superadmin (no company) sees ALL companies' products with a Company column.
+- `src/server/product-actions.ts` — `saveProductAction` (create/update):
+  brand required unless type is Service (id 2), keywords array (min 1),
+  taxes synced in `product_catalogs_taxes` with the tax's rate — null/0-rate
+  taxes (IEPS) take the user-provided rate; P2002 on the per-company unique
+  internal/external code returns a "duplicate_code" error. `deleteProductAction`
+  scoped to own company or superadmin.
+- `src/components/products/product-form-dialog.tsx` — create/edit dialog:
+  type select filters units client-side, brand hidden for services, keyword
+  chip input (Enter/blur, case-insensitive unique), tax checkboxes labeled
+  `name (rate%) - country`, conditional IEPS input.
+- Shared `src/components/table-search.tsx` (debounced URL-param search)
+  replaces the biddings-specific copy; biddings page updated.
+
+Reference notes / not yet ported:
+- Product images and technical sheets: legacy stores bare filenames served
+  from the Laravel disk (`public/products/{companyId}/...`); the list shows a
+  placeholder icon and the form has no file inputs. Needs a storage decision
+  (Vercel Blob?) plus media migration off the legacy host (64.23.180.59).
+- Excel import/export toolbar, bulk selection/delete, name/taxes expand
+  ("more"/"less"), stock_quantity (not displayed in legacy list either).
+
 ## 2026-08-28 — Migrate biddings list page (`b6e842b`)
 **Commit:** feat: migrate biddings list page from legacy app
 
