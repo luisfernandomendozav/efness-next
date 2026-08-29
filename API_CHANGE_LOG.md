@@ -15,6 +15,35 @@ Entry format:
 
 ---
 
+## 2026-08-29 — Migrate reports page with role-based KPIs (`cec653f`)
+**Commit:** feat: migrate reports page with role-based KPI indicators
+
+IMPORTANT context: the legacy `/reports` route renders only "Sin resultados"
+(placeholder — see `efness-frontend/src/app/pages/reports/ReportsWrapper.tsx`).
+The real metrics live in the legacy SIDEBAR indicators
+(`SidebarIndicators.tsx`) backed by `BiddingController::getIndicatorsBuyer` /
+`getIndicatorsSeller`. This port surfaces those as the Reports page.
+
+- `src/server/reports.ts`:
+  - Buyer: open (no company status, own company, open/quoted), with-quote
+    (company status quoted), with-purchase-order (status generated_orders),
+    closed (closed/rated), overdue (no company status, created >2 days ago).
+    Buyer cards show percent-of-total bars like the legacy sidebar.
+  - Seller: quoted-not-closed, assigned (assigned/confirmed/
+    generated_orders/rated), unassigned, open (reuses the seller-active
+    bidding filters via `sellerActiveExtras`, now exported from
+    `src/server/biddings.ts`), buyers-with-active-matching-biddings,
+    cumulative sale (SUM order_products.total for own company's orders),
+    new buyer accounts in the last 30 days.
+  - Superadmin/global (new behavior, no legacy equivalent): platform-wide
+    bidding counts by status + active users + companies + total sales.
+- Thresholds hardcoded like legacy: 2 days (overdue), 30 days (new clients).
+- Card palette from legacy: #3699FF, #8950FC, #0BB783, #F64E60, #1A233E.
+
+Not ported: the legacy ToolbarReports (date/sort filters) — it was never
+wired up in the legacy app either. "Closed requisitions, without quoting"
+seller metric was hardcoded 0 in legacy and is omitted here.
+
 ## 2026-08-28 — Migrate advanced search page (`40637be`)
 **Commit:** feat: migrate advanced search page from legacy app
 
