@@ -15,7 +15,7 @@ Entry format:
 
 ---
 
-## 2026-08-28 — Port legacy eFness theme to login and global styles (`0aea29d`)
+## 2026-08-28 — Port legacy eFness theme to login and global styles (`5b4c41d`)
 **Commit:** feat: port legacy eFness theme to login and global styles
 
 The app looked unstyled because `globals.css` was the create-next-app stub —
