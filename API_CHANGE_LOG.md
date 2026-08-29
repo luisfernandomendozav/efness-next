@@ -15,6 +15,32 @@ Entry format:
 
 ---
 
+## 2026-08-29 — Migrate my-network allies page (`3ddebd2`)
+**Commit:** feat: migrate my-network allies page from legacy app
+
+Port of `/my-network` (sidebar: Aliados). Legacy sources:
+`efness-frontend/src/app/pages/allies/` and
+`efness-backend/app/Services/FriendshipService.php`.
+
+- Layout like legacy: left column with tabs (Aliados potenciales grid /
+  Mis aliados list with search by name or company), right column with
+  received and sent pending-request panels.
+- `src/server/network.ts` — `getAllies` (users joined via friendships in
+  either direction), `getReceivedRequests`/`getSentRequests` (pending only).
+  Potential allies reuses `getPotentialAllies` from `src/server/feed.ts`
+  (now takes a `limit` param; 12 here, 9 on dashboard).
+- `src/server/network-actions.ts` — accept (status→accepted + create BOTH
+  friendship directions, matching legacy and the migrated data: 3 accepted
+  requests ↔ 6 friendship rows), reject (status→rejected), cancel (delete,
+  sender only), remove ally (delete both directions). All revalidate
+  /my-network and /dashboard; `sendAllyRequestAction` updated likewise.
+
+Not ported (noted for later): websocket realtime updates (Laravel Echo
+`user.{id}` channel), chat drawer integration ("Send Message" button
+omitted until chat exists), company profile modal on card click, the
+"Show More" modal, and the legacy product/proximity ranking of potential
+allies (this port orders by newest user).
+
 ## 2026-08-29 — Migrate reports page with role-based KPIs (`cec653f`)
 **Commit:** feat: migrate reports page with role-based KPI indicators
 
