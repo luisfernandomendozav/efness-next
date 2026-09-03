@@ -7,6 +7,7 @@ const SUPERADMIN_ROLE_ID = 1;
 const { auth } = NextAuth(authConfig);
 
 const publicRoutes = [
+  "/",
   "/login",
   "/register",
   "/verify",
