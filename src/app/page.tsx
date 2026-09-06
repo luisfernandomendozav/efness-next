@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/server/auth";
+import { Benefits, Licenses, Help, Faq, Contact } from "./landing-sections";
 
 export default async function RootPage() {
   const session = await auth();
@@ -14,9 +15,13 @@ export default async function RootPage() {
       <Navbar />
       <main className="flex-1">
         <Hero />
-        <Stats />
+        <Benefits />
         <HowItWorks />
         <Features />
+        <Licenses />
+        <Help />
+        <Faq />
+        <Contact />
         <CtaBanner />
       </main>
       <Footer />
@@ -37,9 +42,13 @@ function Navbar() {
             priority
           />
         </Link>
-        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-[#293762]">
-          <Link href="#features" className="hover:text-[#00ABE5] transition-colors">Funcionalidades</Link>
+        <nav aria-label="Navegación principal" className="hidden xl:flex items-center gap-5 text-sm font-semibold text-[#293762]">
           <Link href="#how-it-works" className="hover:text-[#00ABE5] transition-colors">Comienza</Link>
+          <Link href="#features" className="hover:text-[#00ABE5] transition-colors">Funcionalidades</Link>
+          <Link href="#licencias">Licencias</Link>
+          <Link href="#ayuda">Ayuda</Link>
+          <Link href="#faq">FAQ</Link>
+          <Link href="#contacto">Contacto</Link>
         </nav>
         <div className="flex items-center gap-3">
           <Link
@@ -56,6 +65,14 @@ function Navbar() {
           </Link>
         </div>
       </div>
+      <nav aria-label="Navegación móvil" className="flex gap-5 overflow-x-auto whitespace-nowrap border-t border-[#dbdfe9] px-6 py-3 text-sm font-semibold text-[#293762] xl:hidden">
+        <Link href="#how-it-works">Comienza</Link>
+        <Link href="#features">Funcionalidades</Link>
+        <Link href="#licencias">Licencias</Link>
+        <Link href="#ayuda">Ayuda</Link>
+        <Link href="#faq">FAQ</Link>
+        <Link href="#contacto">Contacto</Link>
+      </nav>
     </header>
   );
 }
@@ -91,7 +108,7 @@ function Hero() {
             href="/register"
             className="inline-flex items-center justify-center px-8 py-3.5 rounded-xl bg-[#00E84A] text-[#293762] font-bold text-base hover:bg-[#00E84A]/90 transition-colors shadow-lg shadow-[#00E84A]/25"
           >
-            Crear cuenta gratis
+            Crear cuenta
           </Link>
           <Link
             href="/login"
@@ -106,26 +123,6 @@ function Hero() {
   );
 }
 
-function Stats() {
-  const items = [
-    { value: "500+", label: "Empresas activas" },
-    { value: "2,400+", label: "Licitaciones publicadas" },
-    { value: "1,800+", label: "Alianzas concretadas" },
-    { value: "98%", label: "Satisfacción de usuarios" },
-  ];
-  return (
-    <section className="bg-[#f9f9f9] border-b border-[#dbdfe9]">
-      <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-        {items.map((s) => (
-          <div key={s.label}>
-            <p className="text-3xl md:text-4xl font-bold text-[#293762]">{s.value}</p>
-            <p className="mt-1 text-sm text-[#78829d]">{s.label}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 function Features() {
   const features = [
@@ -136,9 +133,9 @@ function Features() {
         </svg>
       ),
       color: "#00E84A",
-      title: "Licitaciones en tiempo real",
+      title: "Licitaciones y cotizaciones",
       description:
-        "Publica y participa en licitaciones con notificaciones instantáneas. Gestiona propuestas, compara ofertas y adjudica contratos desde un panel centralizado.",
+        "Publica requisiciones, recibe cotizaciones y compara propuestas por precio, calidad y condiciones de entrega antes de tomar una decisión.",
     },
     {
       icon: (
@@ -149,7 +146,7 @@ function Features() {
       color: "#00ABE5",
       title: "Red de aliados estratégicos",
       description:
-        "Conecta con proveedores, distribuidores y socios de negocio verificados. Expande tu red, genera oportunidades y fortalece tu ecosistema empresarial.",
+        "Conecta con compradores, proveedores y socios de negocio. Amplía tu red y encuentra nuevas oportunidades para tu empresa.",
     },
     {
       icon: (
@@ -169,14 +166,14 @@ function Features() {
         </svg>
       ),
       color: "#00E84A",
-      title: "Reportes e inteligencia",
+      title: "Órdenes de compra",
       description:
-        "Toma decisiones basadas en datos con reportes de actividad, tendencias de licitaciones, rendimiento de tu red y análisis de tu participación en el mercado.",
+        "Da continuidad a la propuesta elegida con una orden de compra y mantén a la vista la información de tu operación comercial.",
     },
   ];
 
   return (
-    <section id="features" className="scroll-mt-16 bg-white py-20 md:py-28">
+    <section id="features" className="scroll-mt-32 bg-white py-20 md:py-28">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
           <p className="text-[#00ABE5] font-semibold text-sm uppercase tracking-wider mb-3">Funcionalidades</p>
@@ -211,29 +208,34 @@ function HowItWorks() {
   const steps = [
     {
       step: "01",
-      title: "Crea tu cuenta",
-      description: "Regístrate en minutos y configura el perfil de tu empresa con información verificada.",
+      title: "Define tu requisición",
+      description: "Como comprador, indica qué necesitas, sus especificaciones y las condiciones de compra.",
     },
     {
       step: "02",
-      title: "Explora o publica",
-      description: "Publica licitaciones, sube tu catálogo de productos o busca oportunidades activas en el mercado.",
+      title: "Recibe cotizaciones",
+      description: "Los proveedores revisan la oportunidad y presentan su oferta de productos o servicios.",
     },
     {
       step: "03",
-      title: "Conecta y crece",
-      description: "Forma alianzas, adjudica contratos y amplía tu red de negocios dentro del ecosistema efness.",
+      title: "Compara y elige",
+      description: "Evalúa precio, calidad, marca y tiempo de entrega de acuerdo con tus prioridades.",
+    },
+    {
+      step: "04",
+      title: "Acuerda la adquisición",
+      description: "Define las condiciones con el proveedor y da seguimiento a la orden de compra.",
     },
   ];
 
   return (
-    <section id="how-it-works" className="scroll-mt-16 bg-[#f9f9f9] py-20 md:py-28">
+    <section id="how-it-works" className="scroll-mt-32 bg-[#f9f9f9] py-20 md:py-28">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
           <p className="text-[#00ABE5] font-semibold text-sm uppercase tracking-wider mb-3">Comienza</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-[#293762]">Empieza en tres pasos</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#293762]">De la necesidad a la orden de compra</h2>
         </div>
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-4 gap-8">
           {steps.map((s, i) => (
             <div key={s.step} className="relative text-center">
               {i < steps.length - 1 && (
@@ -267,15 +269,15 @@ function CtaBanner() {
           ¿Listo para hacer crecer tu empresa?
         </h2>
         <p className="text-white/65 mb-10 text-lg">
-          Únete a las empresas que ya están transformando su forma de hacer negocios con efness.
+          Conecta tu empresa con nuevas oportunidades de compra y venta en efness.
         </p>
         <Link
           href="/register"
           className="inline-flex items-center justify-center px-10 py-4 rounded-xl bg-[#00E84A] text-[#293762] font-bold text-lg hover:bg-[#00E84A]/90 transition-colors shadow-lg shadow-[#00E84A]/30"
         >
-          Crear cuenta gratis
+          Crear cuenta
         </Link>
-        <p className="mt-4 text-white/40 text-sm">Sin tarjeta de crédito requerida</p>
+        <p className="mt-4 text-white/70 text-sm">Consulta las opciones de licencia para tu empresa.</p>
       </div>
     </section>
   );
@@ -291,7 +293,11 @@ function Footer() {
           width={120}
           height={29}
         />
-        <div className="flex items-center gap-6 text-sm text-white/40">
+        <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-white/70">
+          <Link href="#licencias">Licencias</Link>
+          <Link href="#ayuda">Ayuda</Link>
+          <Link href="#faq">FAQ</Link>
+          <Link href="#contacto">Contacto</Link>
           <Link href="/login" className="hover:text-white/70 transition-colors">Iniciar sesión</Link>
           <Link href="/register" className="hover:text-white/70 transition-colors">Registrarse</Link>
         </div>
