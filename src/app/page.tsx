@@ -15,8 +15,8 @@ export default async function RootPage() {
       <main className="flex-1">
         <Hero />
         <Stats />
-        <Features />
         <HowItWorks />
+        <Features />
         <CtaBanner />
       </main>
       <Footer />
@@ -39,7 +39,7 @@ function Navbar() {
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-[#293762]">
           <Link href="#features" className="hover:text-[#00ABE5] transition-colors">Funcionalidades</Link>
-          <Link href="#how-it-works" className="hover:text-[#00ABE5] transition-colors">Cómo funciona</Link>
+          <Link href="#how-it-works" className="hover:text-[#00ABE5] transition-colors">Comienza</Link>
         </nav>
         <div className="flex items-center gap-3">
           <Link
@@ -75,13 +75,15 @@ function Hero() {
           Plataforma de licitaciones y red de negocios
         </span>
         <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight max-w-3xl mx-auto">
-          Conecta, licita y{" "}
-          <span className="text-[#00E84A]">haz crecer</span>{" "}
-          tu negocio
+          Comunidad de{" "}
+          <span className="text-[#00E84A]">compradores y proveedores</span>
         </h1>
+        <p className="mt-6 text-2xl md:text-3xl font-semibold text-white">
+          Haz eficiente tu negocio.
+        </p>
         <p className="mt-6 text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed">
           efness es la plataforma B2B donde empresas publican licitaciones,
-          encuentran aliados estratégicos y gestionan su catálogo de productos
+          asignan órdenes de compra, encuentran aliados estratégicos y gestionan su catálogo de productos
           en un solo lugar.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
@@ -174,7 +176,7 @@ function Features() {
   ];
 
   return (
-    <section id="features" className="bg-white py-20 md:py-28">
+    <section id="features" className="scroll-mt-16 bg-white py-20 md:py-28">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
           <p className="text-[#00ABE5] font-semibold text-sm uppercase tracking-wider mb-3">Funcionalidades</p>
@@ -225,10 +227,10 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="bg-[#f9f9f9] py-20 md:py-28">
+    <section id="how-it-works" className="scroll-mt-16 bg-[#f9f9f9] py-20 md:py-28">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
-          <p className="text-[#00ABE5] font-semibold text-sm uppercase tracking-wider mb-3">Cómo funciona</p>
+          <p className="text-[#00ABE5] font-semibold text-sm uppercase tracking-wider mb-3">Comienza</p>
           <h2 className="text-3xl md:text-4xl font-bold text-[#293762]">Empieza en tres pasos</h2>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
