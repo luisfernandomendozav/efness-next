@@ -19,7 +19,9 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const session = req.auth;
 
-  const isPublic = publicRoutes.some((r) => pathname.startsWith(r));
+  const isPublic = publicRoutes.some(
+    (r) => pathname === r || pathname.startsWith(r + "/"),
+  );
   const isTwoFactor = pathname.startsWith("/two-factor");
 
   if (!session) {
