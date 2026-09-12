@@ -1062,5 +1062,14 @@
   "Overdue requisitions": "Requisiciones vencidas",
   "New clients with active biddings": "Nuevos clientes con requisiciones activas",
   "Companies": "Empresas",
-  "The email has already been taken.": "El correo electrónico ya está registrado."
+  "The email has already been taken.": "El correo electrónico ya está registrado.",
+  "Profile Details": "Detalles del perfil",
+  "Change Password": "Cambiar contraseña",
+  "Phone": "Teléfono",
+  "Profile updated successfully": "Perfil actualizado correctamente",
+  "Password updated successfully": "Contraseña actualizada correctamente",
+  "Passwords do not match": "Las contraseñas no coinciden",
+  "Password must be at least 8 characters": "La contraseña debe tener al menos 8 caracteres",
+  "The current password is incorrect": "La contraseña actual es incorrecta",
+  "Please review the entered data": "Por favor revise los datos ingresados"
 }
