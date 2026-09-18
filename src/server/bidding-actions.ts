@@ -12,15 +12,14 @@ export async function deleteBiddingAction(biddingId: number) {
 
   const bidding = await db.bidding.findUnique({
     where: { id: biddingId },
-    select: { creator: { select: { companyId: true } } },
+    select: { createdBy: true },
   });
   if (!bidding) return;
 
+  // Solo el creador (o el superadmin) puede borrar; alineado con el listado,
+  // que ya solo muestra las requisiciones propias.
   const isSuperadmin = session.user.roleId === SUPERADMIN_ROLE_ID;
-  const ownCompany =
-    session.user.companyId !== null &&
-    bidding.creator.companyId === session.user.companyId;
-  if (!isSuperadmin && !ownCompany) return;
+  if (!isSuperadmin && bidding.createdBy !== Number(session.user.id)) return;
 
   await db.bidding.delete({ where: { id: biddingId } });
   revalidatePath("/biddings");

@@ -4,6 +4,7 @@ import { db } from "@/server/db";
 export const PRODUCTS_PAGE_SIZE = 10;
 
 export type ProductsViewer = {
+  userId: number;
   companyId: number | null;
   isSuperadmin: boolean;
 };
@@ -26,12 +27,10 @@ export async function getProducts(
   search: string,
   page: number,
 ) {
-  // Réplica de ProductCatalogRepository::getAllForCompany. El superadmin no
-  // tiene empresa: ve el catálogo de todas.
+  // Cada usuario ve solo los productos que él creó; el superadmin ve todos
+  // (feedback presentación 2026-09; antes era por empresa).
   const where: Prisma.ProductCatalogWhereInput = {
-    ...(viewer.isSuperadmin || viewer.companyId === null
-      ? {}
-      : { companyId: viewer.companyId }),
+    ...(viewer.isSuperadmin ? {} : { createdBy: viewer.userId }),
     ...(search ? searchWhere(search) : {}),
   };
 
@@ -82,6 +81,7 @@ export async function getProducts(
         keywords: Array.isArray(p.keywords) ? (p.keywords as string[]) : [],
         taxes: p.productCatalogTaxes.map((t) => ({
           taxId: t.taxId,
+          name: t.tax.taxName,
           rate: Number(t.taxRate),
         })),
       },
@@ -103,6 +103,9 @@ export async function getProductLookups() {
       orderBy: { name: "asc" },
     }),
     db.tax.findMany({
+      // Los impuestos capturados a mano (description "custom") no forman
+      // parte del listado predefinido.
+      where: { OR: [{ description: null }, { description: { not: "custom" } }] },
       select: { id: true, taxName: true, taxRate: true, country: true },
       orderBy: { id: "asc" },
     }),

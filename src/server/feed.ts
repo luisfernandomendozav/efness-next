@@ -2,8 +2,8 @@ import { db } from "@/server/db";
 
 export const FEED_PAGE_SIZE = 10;
 
-// Réplica de PostService::getFeed del backend Laravel: posts públicos más
-// los de aliados (o propios) con visibilidad "allies".
+// A diferencia del backend legacy (públicos + aliados), el feed muestra solo
+// publicaciones propias y de aliados (feedback presentación 2026-09).
 
 export async function getFriendIds(userId: number) {
   const rows = await db.friendship.findMany({
@@ -43,13 +43,7 @@ const postInclude = (viewerId: number) =>
 export async function getFeed(viewerId: number, pages = 1) {
   const friendIds = await getFriendIds(viewerId);
   const where = {
-    OR: [
-      { visibility: "public" as const },
-      {
-        visibility: "allies" as const,
-        userId: { in: [...friendIds, viewerId] },
-      },
-    ],
+    userId: { in: [...friendIds, viewerId] },
   };
 
   const [posts, total] = await Promise.all([
@@ -79,6 +73,7 @@ export async function getFeed(viewerId: number, pages = 1) {
   }
 
   return {
+    hasAllies: friendIds.length > 0,
     posts: posts.map((p) => ({
       id: p.id,
       userId: p.userId,
