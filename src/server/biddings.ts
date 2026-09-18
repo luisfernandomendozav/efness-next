@@ -91,25 +91,26 @@ async function whereForTab(
 ): Promise<Prisma.BiddingWhereInput> {
   const statuses = TAB_STATUSES[tab];
 
-  // El superadmin no tiene empresa: ve todas las requisiciones por estado.
-  if (viewer.isSuperadmin || viewer.companyId === null) {
-    if (tab === "closed") return { status: { in: statuses } };
-    return { status: { in: statuses } };
-  }
-  const companyId = viewer.companyId;
+  // El superadmin ve todas las requisiciones por estado.
+  if (viewer.isSuperadmin) return { status: { in: statuses } };
 
-  if (!viewer.isSeller) {
-    // Comprador: siempre sobre requisiciones de su propia empresa.
-    if (tab === "closed") {
+  if (!viewer.isSeller || viewer.companyId === null) {
+    // Comprador: solo sus propias requisiciones en todas las pestañas
+    // (feedback presentación 2026-09; antes eran las de toda la empresa).
+    if (tab === "closed" && viewer.companyId !== null) {
       return {
-        creator: { companyId },
+        createdBy: viewer.userId,
         biddingCompanyStatuses: {
-          some: { companyId, status: { in: ["closed", "rated"] } },
+          some: {
+            companyId: viewer.companyId,
+            status: { in: ["closed", "rated"] },
+          },
         },
       };
     }
-    return { status: { in: statuses }, creator: { companyId } };
+    return { status: { in: statuses }, createdBy: viewer.userId };
   }
+  const companyId = viewer.companyId;
 
   // Vendedor.
   if (tab === "active") {
@@ -284,7 +285,7 @@ export async function getBiddings(
       canDelete:
         tab === "active" &&
         (viewer.isSuperadmin ||
-          (!viewer.isSeller && viewer.companyId !== null)),
+          (!viewer.isSeller && b.createdBy === viewer.userId)),
     };
   });
 

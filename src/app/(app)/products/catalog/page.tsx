@@ -35,6 +35,7 @@ export default async function ProductCatalogPage({
   ]);
 
   const viewer: ProductsViewer = {
+    userId: Number(session!.user.id),
     companyId: session!.user.companyId,
     isSuperadmin: session!.user.roleId === SUPERADMIN_ROLE_ID,
   };
@@ -46,7 +47,8 @@ export default async function ProductCatalogPage({
     getProductLookups(),
   ]);
 
-  const showCompany = viewer.isSuperadmin || viewer.companyId === null;
+  // La columna Empresa solo aporta al superadmin, que ve todos los catálogos.
+  const showCompany = viewer.isSuperadmin;
   const canCreate = session!.user.companyId !== null;
   const qs = (p: number) =>
     `?${new URLSearchParams({ ...(search ? { search } : {}), page: String(p) })}`;

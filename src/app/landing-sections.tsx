@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { db } from "@/server/db";
 
 export function Benefits() {
   const items = [
@@ -16,18 +17,131 @@ export function Benefits() {
   );
 }
 
-export function Licenses() {
+// Traducciones de los títulos de features de la tabla `features` (legacy).
+const FEATURE_LABELS: Record<string, string> = {
+  "Request, quote, compare and generate purchase order":
+    "Solicita, cotiza, compara y genera órdenes de compra",
+  "Generates formal documents of the purchase-sale process":
+    "Genera documentos formales del proceso de compra-venta",
+  "Export documents from the purchase-sale process":
+    "Exporta documentos del proceso de compra-venta",
+  "Search users/products (only 4)": "Buscador de usuarios/productos (4 resultados)",
+  "Search users/products": "Buscador de usuarios/productos ilimitado",
+  "Rate users": "Califica usuarios",
+  "Verified User Mark": "Insignia de usuario verificado",
+  Notifications: "Notificaciones",
+  "Social Network": "Red social",
+  "Internal chat": "Chat interno",
+  "Dashboard indicators": "Indicadores en el dashboard",
+  "Exchange rate on dashboard": "Tipo de cambio en el dashboard",
+  "Advertising sales": "Venta de publicidad",
+};
+
+const PLAN_SUBTITLES: Record<string, string> = {
+  "For small companies": "Para empresas pequeñas",
+  "For big companies": "Para empresas grandes",
+  "For enterprise companies": "Para empresas corporativas",
+};
+
+const money = (v: unknown) =>
+  `$${Number(v ?? 0).toLocaleString("es-MX", { maximumFractionDigits: 0 })}`;
+
+async function getPlans() {
+  return db.plan.findMany({
+    where: { custom: false },
+    orderBy: { priceBuyerMonth: "asc" },
+    include: {
+      planFeatures: {
+        where: { feature: { isVisible: true } },
+        orderBy: { featureId: "asc" },
+        include: { feature: { select: { title: true } } },
+      },
+    },
+  });
+}
+
+function PlanCards({
+  plans,
+  side,
+}: {
+  plans: Awaited<ReturnType<typeof getPlans>>;
+  side: "buyer" | "seller";
+}) {
+  return (
+    <div className="grid gap-6 lg:grid-cols-3">
+      {plans.map((plan) => {
+        const month = side === "buyer" ? plan.priceBuyerMonth : plan.priceSellerMonth;
+        const annual = side === "buyer" ? plan.priceBuyerAnnual : plan.priceSellerAnnual;
+        const free = Number(month ?? 0) === 0;
+        return (
+          <article
+            key={plan.id}
+            className="flex flex-col rounded-2xl border border-[#dbdfe9] bg-white p-7"
+          >
+            <h4 className="text-xl font-bold text-[#293762]">{plan.title}</h4>
+            <p className="mt-1 text-sm text-[#78829d]">
+              {PLAN_SUBTITLES[plan.subtitle ?? ""] ?? plan.subtitle}
+            </p>
+            <p className="mt-5">
+              <span className="text-3xl font-bold text-[#293762]">
+                {free ? "Gratis" : money(month)}
+              </span>
+              {!free && <span className="text-sm text-[#78829d]"> MXN/mes</span>}
+            </p>
+            {!free && (
+              <p className="text-sm text-[#78829d]">
+                o {money(annual)} MXN/año
+              </p>
+            )}
+            <ul className="my-6 space-y-2 text-sm">
+              {plan.planFeatures.map(({ feature, supported }) => (
+                <li
+                  key={feature.title}
+                  className={
+                    supported ? "text-[#526080]" : "text-[#b5b9c5] line-through"
+                  }
+                >
+                  <span className={supported ? "mr-2 font-bold text-[#00c73e]" : "mr-2"}>
+                    {supported ? "✓" : "✗"}
+                  </span>
+                  {FEATURE_LABELS[feature.title] ?? feature.title}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href={`/register?cuenta=${side === "buyer" ? "comprador" : "proveedor"}&plan=${plan.title.toLowerCase()}`}
+              className="mt-auto inline-flex justify-center rounded-lg bg-[#293762] px-5 py-3 font-semibold text-white hover:bg-[#1a2442]"
+            >
+              Elegir {plan.title}
+            </Link>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+export async function Licenses() {
+  const plans = await getPlans();
   return (
     <section id="licencias" className="scroll-mt-32 bg-[#f9f9f9] px-6 py-20">
       <div className="mx-auto max-w-6xl">
         <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#007da8]">Licencias</p>
         <h2 className="text-3xl font-bold text-[#293762] md:text-4xl">Una solución para cada lado del negocio</h2>
-        <p className="mt-4 max-w-2xl text-[#526080]">Cuéntanos cómo compra o vende tu empresa. Te orientamos sobre las opciones de cuenta y sus condiciones antes de contratar.</p>
+        <p className="mt-4 max-w-2xl text-[#526080]">Elige el tipo de cuenta que se ajusta a tu empresa. Hay tres cuentas disponibles para compradores y tres para proveedores.</p>
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           {[
-            ["Para compradores", "Organiza tus requisiciones, evalúa cotizaciones y elige proveedores según tus criterios de compra."],
-            ["Para proveedores", "Presenta tu oferta, participa en oportunidades y da a conocer tu catálogo a nuevos compradores."],
-          ].map(([title, text]) => <article key={title} className="rounded-2xl border border-[#dbdfe9] bg-white p-8"><h3 className="text-2xl font-bold text-[#293762]">{title}</h3><p className="my-5 leading-relaxed text-[#526080]">{text}</p><Link href="#contacto" className="inline-flex rounded-lg bg-[#293762] px-5 py-3 font-semibold text-white hover:bg-[#1a2442]">Consultar opciones</Link></article>)}
+            ["Para compradores", "Organiza tus requisiciones, evalúa cotizaciones y elige proveedores según tus criterios de compra.", "#licencias-compradores"],
+            ["Para proveedores", "Presenta tu oferta, participa en oportunidades y da a conocer tu catálogo a nuevos compradores.", "#licencias-proveedores"],
+          ].map(([title, text, href]) => <article key={title} className="rounded-2xl border border-[#dbdfe9] bg-white p-8"><h3 className="text-2xl font-bold text-[#293762]">{title}</h3><p className="my-5 leading-relaxed text-[#526080]">{text}</p><Link href={href} className="inline-flex rounded-lg bg-[#293762] px-5 py-3 font-semibold text-white hover:bg-[#1a2442]">Consultar opciones</Link></article>)}
+        </div>
+        <div id="licencias-compradores" className="mt-16 scroll-mt-32">
+          <h3 className="mb-6 text-2xl font-bold text-[#293762]">Cuentas para compradores</h3>
+          <PlanCards plans={plans} side="buyer" />
+        </div>
+        <div id="licencias-proveedores" className="mt-16 scroll-mt-32">
+          <h3 className="mb-6 text-2xl font-bold text-[#293762]">Cuentas para proveedores</h3>
+          <PlanCards plans={plans} side="seller" />
         </div>
       </div>
     </section>

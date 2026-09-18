@@ -106,3 +106,81 @@ export async function changePasswordAction(
   });
   return { success: true };
 }
+
+// ---- Pestaña "Zona geográfica y giro" ----
+
+const categoriesSchema = z.array(z.coerce.number().int().min(1)).max(100);
+
+export async function saveCategoriesAction(
+  _prev: AccountActionState,
+  formData: FormData,
+): Promise<AccountActionState> {
+  const userId = await requireUserId();
+
+  const parsed = categoriesSchema.safeParse(formData.getAll("categoryIds"));
+  if (!parsed.success) return { error: "validation_error" };
+  const categoryIds = [...new Set(parsed.data)];
+
+  await db.$transaction([
+    db.userCategory.deleteMany({ where: { userId } }),
+    db.userCategory.createMany({
+      data: categoryIds.map((categoryId) => ({ userId, categoryId })),
+    }),
+  ]);
+
+  revalidatePath("/account");
+  return { success: true };
+}
+
+const geoScopeSchema = z.object({
+  countryId: z.coerce.number().int().min(1),
+  stateId: z.coerce.number().int().min(1).optional(),
+  cityName: z.string().trim().max(255).optional(),
+  scopeType: z.enum(["include", "exclude"]),
+});
+
+export async function addGeoScopeAction(
+  _prev: AccountActionState,
+  formData: FormData,
+): Promise<AccountActionState> {
+  const userId = await requireUserId();
+
+  const parsed = geoScopeSchema.safeParse({
+    countryId: formData.get("countryId"),
+    stateId: formData.get("stateId") || undefined,
+    cityName: formData.get("cityName") || undefined,
+    scopeType: formData.get("scopeType"),
+  });
+  if (!parsed.success) return { error: "validation_error" };
+  const { countryId, stateId, cityName, scopeType } = parsed.data;
+
+  // Una ciudad requiere estado; el nivel se deriva del dato más específico.
+  if (cityName && !stateId) return { error: "state_required" };
+  const level = cityName ? "city" : stateId ? "state" : "country";
+
+  try {
+    await db.sellerGeographicScope.create({
+      data: {
+        sellerId: userId,
+        countryId,
+        stateId: stateId ?? null,
+        cityName: cityName ?? null,
+        scopeType,
+        level,
+      },
+    });
+  } catch {
+    return { error: "duplicate_scope" };
+  }
+
+  revalidatePath("/account");
+  return { success: true };
+}
+
+export async function deleteGeoScopeAction(scopeId: number) {
+  const userId = await requireUserId();
+  await db.sellerGeographicScope.deleteMany({
+    where: { id: scopeId, sellerId: userId },
+  });
+  revalidatePath("/account");
+}

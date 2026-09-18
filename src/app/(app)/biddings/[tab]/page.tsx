@@ -78,6 +78,9 @@ export default async function BiddingsTabPage({
   );
 
   const isSellerView = viewer.isSeller;
+  // El comprador solo ve sus propias requisiciones, así que la columna de
+  // creador sobra (feedback presentación 2026-09).
+  const showOwner = viewer.isSeller || viewer.isSuperadmin;
   const qs = (p: number) =>
     `?${new URLSearchParams({ ...(search ? { search } : {}), page: String(p) })}`;
 
@@ -109,9 +112,11 @@ export default async function BiddingsTabPage({
             <TableHeader>
               <TableRow>
                 <TableHead>{t("Bidding #")}</TableHead>
-                <TableHead>
-                  {isSellerView ? t("Company") : t("Created by")}
-                </TableHead>
+                {showOwner && (
+                  <TableHead>
+                    {isSellerView ? t("Company") : t("Created by")}
+                  </TableHead>
+                )}
                 <TableHead>{t("Delivery type")}</TableHead>
                 <TableHead>{t("Delivery address")}</TableHead>
                 <TableHead>{t("Currency")}</TableHead>
@@ -126,9 +131,11 @@ export default async function BiddingsTabPage({
                   <TableCell className="font-semibold">
                     {b.biddingNumber}
                   </TableCell>
-                  <TableCell>
-                    {isSellerView ? b.companyName : b.createdByName}
-                  </TableCell>
+                  {showOwner && (
+                    <TableCell>
+                      {isSellerView ? b.companyName : b.createdByName}
+                    </TableCell>
+                  )}
                   <TableCell>
                     {t(DELIVERY_TYPE_LABELS[b.deliveryType] ?? b.deliveryType)}
                   </TableCell>
@@ -157,7 +164,7 @@ export default async function BiddingsTabPage({
               {biddings.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={showOwner ? 8 : 7}
                     className="py-10 text-center text-muted-foreground"
                   >
                     {t("No results found")}

@@ -170,6 +170,17 @@ function Features() {
       description:
         "Da continuidad a la propuesta elegida con una orden de compra y mantén a la vista la información de tu operación comercial.",
     },
+    {
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z" />
+        </svg>
+      ),
+      color: "#00ABE5",
+      title: "Reportes y análisis",
+      description:
+        "Consulta reportes de tus compras, ventas y cotizaciones para analizar el desempeño de tu operación y tomar mejores decisiones.",
+    },
   ];
 
   return (
@@ -182,7 +193,7 @@ function Features() {
             Una plataforma integral diseñada para empresas que quieren crecer, conectar y competir en el mercado B2B.
           </p>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((f) => (
             <div
               key={f.title}
@@ -205,11 +216,11 @@ function Features() {
 }
 
 function HowItWorks() {
-  const steps = [
+  const buyerSteps = [
     {
       step: "01",
       title: "Define tu requisición",
-      description: "Como comprador, indica qué necesitas, sus especificaciones y las condiciones de compra.",
+      description: "Indica qué necesitas, sus especificaciones y las condiciones de compra.",
     },
     {
       step: "02",
@@ -227,6 +238,33 @@ function HowItWorks() {
       description: "Define las condiciones con el proveedor y da seguimiento a la orden de compra.",
     },
   ];
+  const sellerSteps = [
+    {
+      step: "01",
+      title: "Publica tu catálogo",
+      description: "Da de alta tus productos y servicios y define tu zona geográfica y giro.",
+    },
+    {
+      step: "02",
+      title: "Encuentra oportunidades",
+      description: "Revisa las requisiciones abiertas que coinciden con tu oferta y tu cobertura.",
+    },
+    {
+      step: "03",
+      title: "Presenta tu cotización",
+      description: "Cotiza con precios, condiciones y tiempos de entrega competitivos.",
+    },
+    {
+      step: "04",
+      title: "Cierra la venta",
+      description: "Recibe la asignación, confirma la orden de compra y consolida la relación comercial.",
+    },
+  ];
+
+  const flows = [
+    { key: "compradores", label: "Para compradores", accent: "#00ABE5", steps: buyerSteps },
+    { key: "proveedores", label: "Para proveedores", accent: "#00E84A", steps: sellerSteps },
+  ];
 
   return (
     <section id="how-it-works" className="scroll-mt-32 bg-[#f9f9f9] py-20 md:py-28">
@@ -234,18 +272,34 @@ function HowItWorks() {
         <div className="text-center mb-16">
           <p className="text-[#00ABE5] font-semibold text-sm uppercase tracking-wider mb-3">Comienza</p>
           <h2 className="text-3xl md:text-4xl font-bold text-[#293762]">De la necesidad a la orden de compra</h2>
+          <p className="mt-4 text-[#78829d] max-w-xl mx-auto">
+            En efness siempre hay dos lados del negocio: así funciona para quien compra y para quien vende.
+          </p>
         </div>
-        <div className="grid md:grid-cols-4 gap-8">
-          {steps.map((s, i) => (
-            <div key={s.step} className="relative text-center">
-              {i < steps.length - 1 && (
-                <div className="hidden md:block absolute top-10 left-[calc(50%+3rem)] right-[calc(-50%+3rem)] h-px border-t-2 border-dashed border-[#dbdfe9]" />
-              )}
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[#293762] text-white text-2xl font-bold mb-6 relative z-10">
-                {s.step}
+        <div className="space-y-16">
+          {flows.map((flow) => (
+            <div key={flow.key}>
+              <h3 className="mb-10 text-center text-2xl font-bold text-[#293762]">
+                <span
+                  className="mr-3 inline-block h-3 w-3 rounded-full align-middle"
+                  style={{ backgroundColor: flow.accent }}
+                />
+                {flow.label}
+              </h3>
+              <div className="grid md:grid-cols-4 gap-8">
+                {flow.steps.map((s, i) => (
+                  <div key={s.step} className="relative text-center">
+                    {i < flow.steps.length - 1 && (
+                      <div className="hidden md:block absolute top-10 left-[calc(50%+3rem)] right-[calc(-50%+3rem)] h-px border-t-2 border-dashed border-[#dbdfe9]" />
+                    )}
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[#293762] text-white text-2xl font-bold mb-6 relative z-10">
+                      {s.step}
+                    </div>
+                    <h3 className="text-xl font-bold text-[#293762] mb-3">{s.title}</h3>
+                    <p className="text-[#78829d] leading-relaxed">{s.description}</p>
+                  </div>
+                ))}
               </div>
-              <h3 className="text-xl font-bold text-[#293762] mb-3">{s.title}</h3>
-              <p className="text-[#78829d] leading-relaxed">{s.description}</p>
             </div>
           ))}
         </div>

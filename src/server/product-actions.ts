@@ -22,8 +22,10 @@ const productSchema = z.object({
   satKey: z.string().trim().max(255).optional(),
   unitId: z.coerce.number().int().min(1),
   keywords: z.array(z.string().trim().min(1)).min(1),
-  taxIds: z.array(z.coerce.number().int()).min(1),
+  taxIds: z.array(z.coerce.number().int()),
   iepsRate: z.coerce.number().min(0).optional(),
+  customTaxName: z.string().trim().min(1).max(255).optional(),
+  customTaxRate: z.coerce.number().min(0).max(100).optional(),
 });
 
 export async function saveProductAction(
@@ -47,12 +49,24 @@ export async function saveProductAction(
     keywords: JSON.parse(String(formData.get("keywords") ?? "[]")),
     taxIds: formData.getAll("taxIds"),
     iepsRate: formData.get("iepsRate") || undefined,
+    customTaxName: formData.get("customTaxName") || undefined,
+    customTaxRate:
+      formData.get("customTaxRate") === null ||
+      formData.get("customTaxRate") === ""
+        ? undefined
+        : formData.get("customTaxRate"),
   });
   if (!parsed.success) return { error: "invalid_product" };
   const data = parsed.data;
 
   if (data.productTypeId !== SERVICE_TYPE_ID && !data.brand) {
     return { error: "brand_required" };
+  }
+
+  const hasCustomTax =
+    data.customTaxName !== undefined && data.customTaxRate !== undefined;
+  if (data.taxIds.length === 0 && !hasCustomTax) {
+    return { error: "tax_required" };
   }
 
   const taxes = await db.tax.findMany({ where: { id: { in: data.taxIds } } });
@@ -63,6 +77,31 @@ export async function saveProductAction(
         ? new Prisma.Decimal(data.iepsRate ?? 0)
         : t.taxRate,
   }));
+
+  // Impuesto libre: se reutiliza si ya existe uno con el mismo nombre y tasa;
+  // si no, se crea marcado como "custom" para no aparecer en el listado de
+  // impuestos predefinidos.
+  if (hasCustomTax) {
+    const rate = new Prisma.Decimal(data.customTaxRate!);
+    const customTax =
+      (await db.tax.findFirst({
+        where: {
+          taxName: { equals: data.customTaxName!, mode: "insensitive" },
+          taxRate: rate,
+        },
+      })) ??
+      (await db.tax.create({
+        data: {
+          taxName: data.customTaxName!,
+          taxRate: rate,
+          country: "Mexico",
+          description: "custom",
+        },
+      }));
+    if (!taxRows.some((t) => t.taxId === customTax.id)) {
+      taxRows.push({ taxId: customTax.id, taxRate: rate });
+    }
+  }
 
   const base = {
     productTypeId: data.productTypeId,
@@ -80,10 +119,10 @@ export async function saveProductAction(
     if (data.id) {
       const existing = await db.productCatalog.findUnique({
         where: { id: data.id },
-        select: { companyId: true },
+        select: { createdBy: true },
       });
       if (!existing) return { error: "invalid_product" };
-      if (!isSuperadmin && existing.companyId !== session.user.companyId) {
+      if (!isSuperadmin && existing.createdBy !== Number(session.user.id)) {
         return { error: "invalid_product" };
       }
       await db.$transaction([
@@ -130,10 +169,10 @@ export async function deleteProductAction(productId: number) {
 
   const product = await db.productCatalog.findUnique({
     where: { id: productId },
-    select: { companyId: true },
+    select: { createdBy: true },
   });
   if (!product) return;
-  if (!isSuperadmin && product.companyId !== session.user.companyId) return;
+  if (!isSuperadmin && product.createdBy !== Number(session.user.id)) return;
 
   await db.productCatalog.delete({ where: { id: productId } });
   revalidatePath("/products/catalog");

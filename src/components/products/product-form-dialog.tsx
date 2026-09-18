@@ -24,6 +24,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   brand_required: "Brand is required",
   duplicate_code: "Internal code already exists",
   no_company: "Your user has no company assigned, so it cannot publish posts.",
+  tax_required: "Select a tax or enter one manually",
 };
 
 function KeywordsInput({
@@ -101,6 +102,8 @@ export function ProductFormDialog({
   const [taxIds, setTaxIds] = useState<number[]>(
     product?.form.taxes.map((t) => t.taxId) ?? [],
   );
+  const [customTaxName, setCustomTaxName] = useState("");
+  const [customTaxRate, setCustomTaxRate] = useState("");
   const [wasPending, setWasPending] = useState(false);
 
   useEffect(() => {
@@ -112,6 +115,8 @@ export function ProductFormDialog({
         setKeywords([]);
         setTaxIds([]);
       }
+      setCustomTaxName("");
+      setCustomTaxRate("");
     }
   }, [pending, state, wasPending, product]);
 
@@ -119,6 +124,13 @@ export function ProductFormDialog({
   const iepsSelected = lookups.taxes.some(
     (tax) => taxIds.includes(tax.id) && (tax.rate === null || tax.rate === 0),
   );
+  // Impuestos ya aplicados al producto que no están en el listado predefinido
+  // (capturados a mano); se muestran para poder quitarlos o conservarlos.
+  const extraTaxes = (product?.form.taxes ?? []).filter(
+    (ft) => !lookups.taxes.some((l) => l.id === ft.taxId),
+  );
+  const hasCustomTax =
+    customTaxName.trim().length > 0 && customTaxRate.trim().length > 0;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -275,6 +287,53 @@ export function ProductFormDialog({
                   {tax.name} ({tax.rate ?? 0}%) - {tax.country}
                 </label>
               ))}
+              {extraTaxes.map((tax) => (
+                <label
+                  key={tax.taxId}
+                  className="flex items-center gap-2 text-sm"
+                >
+                  <Checkbox
+                    checked={taxIds.includes(tax.taxId)}
+                    onCheckedChange={(checked) =>
+                      setTaxIds((prev) =>
+                        checked
+                          ? [...prev, tax.taxId]
+                          : prev.filter((id) => id !== tax.taxId),
+                      )
+                    }
+                  />
+                  {tax.name} ({tax.rate}%)
+                </label>
+              ))}
+            </div>
+            <div className="grid grid-cols-[1fr_7rem] gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="p-custom-tax" className="text-xs text-muted-foreground">
+                  {t("Other tax (name)")}
+                </Label>
+                <Input
+                  id="p-custom-tax"
+                  name="customTaxName"
+                  value={customTaxName}
+                  onChange={(e) => setCustomTaxName(e.target.value)}
+                  placeholder={t("Tax name")}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="p-custom-rate" className="text-xs text-muted-foreground">
+                  %
+                </Label>
+                <Input
+                  id="p-custom-rate"
+                  name="customTaxRate"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={customTaxRate}
+                  onChange={(e) => setCustomTaxRate(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
@@ -318,7 +377,11 @@ export function ProductFormDialog({
             </Button>
             <Button
               type="submit"
-              disabled={pending || keywords.length === 0 || taxIds.length === 0}
+              disabled={
+                pending ||
+                keywords.length === 0 ||
+                (taxIds.length === 0 && !hasCustomTax)
+              }
             >
               {pending ? t("Please wait...") : t("Submit")}
             </Button>
