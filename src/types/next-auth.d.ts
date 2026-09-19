@@ -9,6 +9,9 @@ declare module "next-auth" {
       userTypeId: number | null;
       companyId: number | null;
       twoFactorPending: boolean;
+      // Id del superadmin original cuando la sesión está impersonando a
+      // otro usuario ("Acceder como", feedback notas 2026-09-18).
+      impersonatorId: number | null;
     } & DefaultSession["user"];
   }
 
@@ -30,5 +33,6 @@ declare module "next-auth/jwt" {
     userTypeId?: number | null;
     companyId?: number | null;
     twoFactorPending?: boolean;
+    impersonatorId?: number | null;
   }
 }

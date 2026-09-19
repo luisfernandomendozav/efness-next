@@ -6,7 +6,6 @@ import { PostComposer } from "@/components/dashboard/post-composer";
 import { PostCard } from "@/components/dashboard/post-card";
 import { PotentialAllies } from "@/components/dashboard/potential-allies";
 import { SponsoredAd } from "@/components/dashboard/sponsored-ad";
-import { ExchangeRates } from "@/components/dashboard/exchange-rates";
 import { Button } from "@/components/ui/button";
 
 export default async function DashboardPage({
@@ -62,7 +61,6 @@ export default async function DashboardPage({
       </div>
       <div className="space-y-5 lg:sticky lg:top-6 lg:self-start">
         <SponsoredAd />
-        <ExchangeRates />
         <PotentialAllies allies={allies} />
       </div>
     </div>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Package } from "lucide-react";
+import { Download, Package } from "lucide-react";
 import { getT } from "@/i18n/get-t";
 import { auth } from "@/server/auth";
 import {
@@ -8,6 +8,7 @@ import {
   type ProductsViewer,
 } from "@/server/products";
 import { DeleteProductButton } from "@/components/products/delete-product-button";
+import { ImportProductsDialog } from "@/components/products/import-products-dialog";
 import { ProductFormDialog } from "@/components/products/product-form-dialog";
 import { TableSearch } from "@/components/table-search";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +58,16 @@ export default async function ProductCatalogPage({
     <div className="mx-auto max-w-7xl space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("Catalog")}</h1>
-        {canCreate && <ProductFormDialog lookups={lookups} />}
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" asChild>
+            <a href="/products/catalog/export" download>
+              <Download className="mr-1 h-4 w-4" />
+              {t("Export")}
+            </a>
+          </Button>
+          {canCreate && <ImportProductsDialog />}
+          {canCreate && <ProductFormDialog lookups={lookups} />}
+        </div>
       </div>
       <Card>
         <CardContent className="space-y-4">
@@ -77,6 +87,7 @@ export default async function ProductCatalogPage({
                   <TableHead>{t("Unit")}</TableHead>
                   <TableHead className="text-right">{t("Price")}</TableHead>
                   <TableHead>{t("Taxes")}</TableHead>
+                  <TableHead>{t("Technical sheet")}</TableHead>
                   <TableHead className="text-right">{t("Actions")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -84,8 +95,17 @@ export default async function ProductCatalogPage({
                 {products.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
-                        <Package className="h-5 w-5 text-muted-foreground" />
+                      <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md bg-muted">
+                        {p.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={p.image}
+                            alt={p.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Package className="h-5 w-5 text-muted-foreground" />
+                        )}
                       </div>
                     </TableCell>
                     <TableCell
@@ -117,6 +137,26 @@ export default async function ProductCatalogPage({
                         ))}
                       </div>
                     </TableCell>
+                    <TableCell>
+                      {p.technicalSheet ? (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          asChild
+                        >
+                          <a
+                            href={p.technicalSheet}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <Download className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end">
                         <ProductFormDialog lookups={lookups} product={p} />
@@ -131,7 +171,7 @@ export default async function ProductCatalogPage({
                 {products.length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={showCompany ? 12 : 11}
+                      colSpan={showCompany ? 13 : 12}
                       className="py-10 text-center text-muted-foreground"
                     >
                       {t("No matching records found")}

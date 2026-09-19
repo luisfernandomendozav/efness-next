@@ -25,7 +25,13 @@ const ERROR_MESSAGES: Record<string, string> = {
   duplicate_code: "Internal code already exists",
   no_company: "Your user has no company assigned, so it cannot publish posts.",
   tax_required: "Select a tax or enter one manually",
+  file_too_large: "The file exceeds the maximum allowed size",
+  invalid_file_type: "Invalid file type",
+  upload_failed: "The file could not be uploaded",
 };
+
+const IMAGE_MAX_BYTES = 2 * 1024 * 1024;
+const PDF_MAX_BYTES = 10 * 1024 * 1024;
 
 function KeywordsInput({
   keywords,
@@ -104,6 +110,7 @@ export function ProductFormDialog({
   );
   const [customTaxName, setCustomTaxName] = useState("");
   const [customTaxRate, setCustomTaxRate] = useState("");
+  const [fileError, setFileError] = useState<string | null>(null);
   const [wasPending, setWasPending] = useState(false);
 
   useEffect(() => {
@@ -258,6 +265,50 @@ export function ProductFormDialog({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="p-image">{t("Image")}</Label>
+            <input
+              id="p-image"
+              type="file"
+              name="image"
+              accept="image/png,image/jpeg,image/webp"
+              className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-medium"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && file.size > IMAGE_MAX_BYTES) {
+                  setFileError("The image must not exceed 2MB");
+                  e.target.value = "";
+                } else setFileError(null);
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t("Maximum image size: 2MB")}
+              {product?.image && ` · ${t("A file is already uploaded")}`}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="p-sheet">{t("Technical sheet")}</Label>
+            <input
+              id="p-sheet"
+              type="file"
+              name="technicalSheet"
+              accept="application/pdf"
+              className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-medium"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && file.size > PDF_MAX_BYTES) {
+                  setFileError("The technical sheet must not exceed 10MB");
+                  e.target.value = "";
+                } else setFileError(null);
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t("Maximum technical sheet size: 10MB (PDF)")}
+              {product?.technicalSheet && ` · ${t("A file is already uploaded")}`}
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label>{t("Keywords")}</Label>
             <KeywordsInput
               keywords={keywords}
@@ -356,6 +407,9 @@ export function ProductFormDialog({
             </div>
           )}
 
+          {fileError && (
+            <p className="text-sm text-destructive">{t(fileError)}</p>
+          )}
           {state?.error && (
             <p className="text-sm text-destructive">
               {t(ERROR_MESSAGES[state.error] ?? state.error)}

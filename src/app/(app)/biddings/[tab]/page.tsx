@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Plus } from "lucide-react";
 import { getT } from "@/i18n/get-t";
 import { auth } from "@/server/auth";
 import {
@@ -88,6 +89,16 @@ export default async function BiddingsTabPage({
     <div className="mx-auto max-w-6xl space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("Biddings")}</h1>
+        {/* Solo el comprador genera requisiciones (feedback notas 2026-09-18;
+            el legacy tenía el botón "Añadir requisición"). */}
+        {!viewer.isSeller && (
+          <Button asChild>
+            <Link href="/biddings/new">
+              <Plus className="mr-1 h-4 w-4" />
+              {t("Add bidding")}
+            </Link>
+          </Button>
+        )}
       </div>
       <div className="flex gap-1 border-b">
         {tabs.map((tabKey) => (

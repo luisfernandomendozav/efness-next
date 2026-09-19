@@ -30,6 +30,7 @@ export const authConfig = {
       session.user.userTypeId = token.userTypeId as number | null;
       session.user.companyId = token.companyId as number | null;
       session.user.twoFactorPending = token.twoFactorPending as boolean;
+      session.user.impersonatorId = (token.impersonatorId as number | null) ?? null;
       return session;
     },
   },
