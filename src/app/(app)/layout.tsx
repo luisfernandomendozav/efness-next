@@ -5,6 +5,7 @@ import { getLocale } from "next-intl/server";
 import { getT } from "@/i18n/get-t";
 import { auth } from "@/server/auth";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
+import { SidebarRates } from "@/components/layout/sidebar-rates";
 import { UserMenu } from "@/components/layout/user-menu";
 import { Badge } from "@/components/ui/badge";
 
@@ -31,7 +32,9 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen flex-1">
-      <aside className="hidden w-60 shrink-0 bg-[#1d2747] md:block">
+      {/* Sticky a la altura del viewport para que los tipos de cambio queden
+          siempre visibles al fondo del sidebar, como el legacy. */}
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col overflow-y-auto bg-[#1d2747] md:flex">
         <div className="flex h-16 items-center px-6">
           <Link href="/dashboard">
             <Image
@@ -45,6 +48,9 @@ export default async function AppLayout({
           </Link>
         </div>
         <SidebarNav isSuperadmin={session.user.roleId === SUPERADMIN_ROLE_ID} />
+        <div className="mt-auto">
+          <SidebarRates />
+        </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 items-center justify-between border-b bg-background px-6">
@@ -67,6 +73,7 @@ export default async function AppLayout({
               name={session.user.name ?? ""}
               email={session.user.email ?? ""}
               image={session.user.image}
+              impersonating={session.user.impersonatorId !== null}
             />
           </div>
         </header>

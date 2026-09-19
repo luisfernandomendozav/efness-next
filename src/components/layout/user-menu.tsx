@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useT } from "@/i18n/use-t";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, Undo2 } from "lucide-react";
 import { logoutAction } from "@/server/auth/actions";
+import { stopImpersonatingAction } from "@/server/impersonation-actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,10 +20,12 @@ export function UserMenu({
   name,
   email,
   image,
+  impersonating = false,
 }: {
   name: string;
   email: string;
   image?: string | null;
+  impersonating?: boolean;
 }) {
   const t = useT();
   const initials = name
@@ -56,6 +59,12 @@ export function UserMenu({
             {t("Account Settings")}
           </Link>
         </DropdownMenuItem>
+        {impersonating && (
+          <DropdownMenuItem onClick={() => stopImpersonatingAction()}>
+            <Undo2 className="mr-2 h-4 w-4" />
+            {t("Back to Admin")}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => logoutAction()}>
           <LogOut className="mr-2 h-4 w-4" />

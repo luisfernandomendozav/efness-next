@@ -36,7 +36,7 @@ export async function SponsoredAd() {
           {t("Reach buyers across the efness network with paid advertising.")}
         </p>
         <a
-          href="mailto:aaron@efness.com?subject=Publicidad%20en%20efness"
+          href="mailto:contacto@efness.com?subject=Publicidad%20en%20efness"
           className="text-sm font-semibold text-primary hover:underline"
         >
           {t("Advertise here")}

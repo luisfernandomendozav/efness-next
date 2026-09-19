@@ -5,6 +5,7 @@ import { getT } from "@/i18n/get-t";
 import { auth } from "@/server/auth";
 import { getUsersAdmin } from "@/server/users-admin";
 import { DeleteUserButton } from "@/components/user-management/delete-user-button";
+import { ImpersonateButton } from "@/components/user-management/impersonate-button";
 import { UserFormDialog } from "@/components/user-management/user-form-dialog";
 import { TableSearch } from "@/components/table-search";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -125,6 +126,7 @@ export default async function UserManagementPage({
                     <div className="flex justify-end">
                       <UserFormDialog user={u} />
                       <DeleteUserButton userId={u.id} userName={u.fullName} />
+                      <ImpersonateButton userId={u.id} userName={u.fullName} />
                     </div>
                   </TableCell>
                 </TableRow>

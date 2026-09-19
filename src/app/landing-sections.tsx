@@ -192,7 +192,7 @@ export function Faq() {
 export function Contact() {
   return (
     <section id="contacto" className="scroll-mt-32 bg-white px-6 py-20">
-      <div className="mx-auto max-w-3xl text-center"><p className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#007da8]">Contáctanos</p><h2 className="text-3xl font-bold text-[#293762] md:text-4xl">Hablemos de tu empresa</h2><p className="mt-5 leading-relaxed text-[#526080]">Solicita información sobre licencias, una demostración o ayuda para comenzar. Incluye tu nombre, empresa y lo que necesitas comprar o vender.</p><a href="mailto:aaron@efness.com?subject=Informaci%C3%B3n%20sobre%20efness" className="mt-8 inline-flex rounded-xl bg-[#293762] px-7 py-3.5 font-semibold text-white hover:bg-[#1a2442]">Escribir al equipo</a><p className="mt-4 text-sm text-[#526080]">aaron@efness.com · El enlace abre tu aplicación de correo.</p></div>
+      <div className="mx-auto max-w-3xl text-center"><p className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#007da8]">Contáctanos</p><h2 className="text-3xl font-bold text-[#293762] md:text-4xl">Hablemos de tu empresa</h2><p className="mt-5 leading-relaxed text-[#526080]">Solicita información sobre licencias, una demostración o ayuda para comenzar. Incluye tu nombre, empresa y lo que necesitas comprar o vender.</p><a href="mailto:contacto@efness.com?subject=Informaci%C3%B3n%20sobre%20efness" className="mt-8 inline-flex rounded-xl bg-[#293762] px-7 py-3.5 font-semibold text-white hover:bg-[#1a2442]">Escribir al equipo</a></div>
     </section>
   );
 }
