@@ -161,7 +161,13 @@ export default async function BiddingsTabPage({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    {b.canDelete ? (
+                    {b.canQuote ? (
+                      <Button size="sm" asChild>
+                        <Link href={`/biddings/quote/${b.id}`}>
+                          {t("Submit quote")}
+                        </Link>
+                      </Button>
+                    ) : b.canDelete ? (
                       <DeleteBiddingButton
                         biddingId={b.id}
                         biddingNumber={b.biddingNumber}

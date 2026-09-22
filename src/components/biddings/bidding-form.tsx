@@ -78,6 +78,101 @@ export function BiddingForm({
           })),
         )}
       />
+      {/* Productos va antes que los datos generales (feedback 2026-09-19). */}
+      <Card>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardTitle>{t("Products")}</CardTitle>
+          <ProductFormDialog lookups={lookups} />
+        </CardHeader>
+        <CardContent className="space-y-3 pt-4">
+          {products.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              {t("Your catalog is empty. Add a product to include it in the bidding.")}
+            </p>
+          )}
+          {lines.map((line, i) => {
+            const product = products.find(
+              (p) => p.id === line.productCatalogId,
+            );
+            return (
+              <div
+                key={line.productCatalogId}
+                className="grid items-end gap-3 rounded-md border p-3 sm:grid-cols-[1fr_6rem_1fr_2.5rem]"
+              >
+                <div>
+                  <p className="text-sm font-medium">{product?.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {product?.internalCode} · {t(product?.unitName ?? "")}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t("Quantity")}</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={line.quantity}
+                    onChange={(e) =>
+                      setLines(
+                        lines.map((l, j) =>
+                          j === i
+                            ? { ...l, quantity: Math.max(1, Number(e.target.value) || 1) }
+                            : l,
+                        ),
+                      )
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t("Comments")}</Label>
+                  <Input
+                    value={line.comments}
+                    maxLength={1000}
+                    onChange={(e) =>
+                      setLines(
+                        lines.map((l, j) =>
+                          j === i ? { ...l, comments: e.target.value } : l,
+                        ),
+                      )
+                    }
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0 text-destructive"
+                  onClick={() => setLines(lines.filter((_, j) => j !== i))}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            );
+          })}
+          {available.length > 0 && (
+            <div className="flex items-end gap-3">
+              <div className="flex-1 space-y-1">
+                <Label className="text-xs">{t("Add product from your catalog")}</Label>
+                <select
+                  value={draftProduct || available[0]?.id}
+                  onChange={(e) => setDraftProduct(Number(e.target.value))}
+                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  {available.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.internalCode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Button type="button" variant="secondary" onClick={addLine}>
+                <Plus className="mr-1 h-4 w-4" />
+                {t("Add")}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>{t("General data")}</CardTitle>
@@ -184,100 +279,6 @@ export function BiddingForm({
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             />
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle>{t("Products")}</CardTitle>
-          <ProductFormDialog lookups={lookups} />
-        </CardHeader>
-        <CardContent className="space-y-3 pt-4">
-          {products.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              {t("Your catalog is empty. Add a product to include it in the bidding.")}
-            </p>
-          )}
-          {lines.map((line, i) => {
-            const product = products.find(
-              (p) => p.id === line.productCatalogId,
-            );
-            return (
-              <div
-                key={line.productCatalogId}
-                className="grid items-end gap-3 rounded-md border p-3 sm:grid-cols-[1fr_6rem_1fr_2.5rem]"
-              >
-                <div>
-                  <p className="text-sm font-medium">{product?.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {product?.internalCode} · {t(product?.unitName ?? "")}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">{t("Quantity")}</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={line.quantity}
-                    onChange={(e) =>
-                      setLines(
-                        lines.map((l, j) =>
-                          j === i
-                            ? { ...l, quantity: Math.max(1, Number(e.target.value) || 1) }
-                            : l,
-                        ),
-                      )
-                    }
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">{t("Comments")}</Label>
-                  <Input
-                    value={line.comments}
-                    maxLength={1000}
-                    onChange={(e) =>
-                      setLines(
-                        lines.map((l, j) =>
-                          j === i ? { ...l, comments: e.target.value } : l,
-                        ),
-                      )
-                    }
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 w-9 p-0 text-destructive"
-                  onClick={() => setLines(lines.filter((_, j) => j !== i))}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            );
-          })}
-          {available.length > 0 && (
-            <div className="flex items-end gap-3">
-              <div className="flex-1 space-y-1">
-                <Label className="text-xs">{t("Add product from your catalog")}</Label>
-                <select
-                  value={draftProduct || available[0]?.id}
-                  onChange={(e) => setDraftProduct(Number(e.target.value))}
-                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-                >
-                  {available.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.internalCode})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <Button type="button" variant="secondary" onClick={addLine}>
-                <Plus className="mr-1 h-4 w-4" />
-                {t("Add")}
-              </Button>
-            </div>
-          )}
         </CardContent>
         <CardFooter className="flex-col items-stretch gap-3 pt-4">
           {state?.error && (

@@ -249,6 +249,7 @@ export async function getBiddings(
 
   const biddings = rows.map((b) => {
     const companyStatus = b.biddingCompanyStatuses[0]?.status ?? null;
+    const expired = b.deadline !== null && b.deadline < new Date();
     return {
       id: b.id,
       biddingNumber: b.biddingNumber,
@@ -286,6 +287,14 @@ export async function getBiddings(
         tab === "active" &&
         (viewer.isSuperadmin ||
           (!viewer.isSeller && b.createdBy === viewer.userId)),
+      // El vendedor cotiza desde la pestaña activa mientras la requisición
+      // siga vigente y su empresa no la haya cotizado (feedback 2026-09-19).
+      canQuote:
+        tab === "active" &&
+        viewer.isSeller &&
+        !expired &&
+        companyStatus === null &&
+        ["open", "quoted"].includes(b.status),
     };
   });
 
@@ -299,3 +308,101 @@ export async function getBiddings(
 export type BiddingRow = Awaited<
   ReturnType<typeof getBiddings>
 >["biddings"][number];
+
+// Carga la requisición para la pantalla de cotizar del vendedor. Devuelve
+// null si la requisición no existe o su empresa ya no puede cotizarla.
+export async function getBiddingForQuote(
+  viewer: BiddingsViewer,
+  biddingId: number,
+) {
+  if (!viewer.isSeller || viewer.companyId === null) return null;
+  const b = await db.bidding.findUnique({
+    where: { id: biddingId },
+    include: {
+      creator: {
+        select: {
+          name: true,
+          lastName: true,
+          company: { select: { id: true, name: true } },
+        },
+      },
+      category: { select: { name: true } },
+      address: {
+        select: {
+          country: true,
+          state: true,
+          city: true,
+          street: true,
+          outdoorNumber: true,
+          zipCode: true,
+        },
+      },
+      biddingProducts: {
+        include: {
+          productCatalog: {
+            select: { internalCode: true, unit: { select: { name: true } } },
+          },
+          biddingProductTaxes: {
+            include: { tax: { select: { taxName: true } } },
+          },
+        },
+      },
+      biddingCompanyStatuses: {
+        where: { companyId: viewer.companyId },
+        select: { id: true },
+      },
+    },
+  });
+  if (!b) return null;
+
+  const expired = b.deadline !== null && b.deadline < new Date();
+  if (
+    !["open", "quoted"].includes(b.status) ||
+    expired ||
+    b.creator.company?.id === viewer.companyId ||
+    b.biddingCompanyStatuses.length > 0
+  ) {
+    return null;
+  }
+
+  return {
+    id: b.id,
+    biddingNumber: b.biddingNumber,
+    companyName: b.creator.company?.name ?? "",
+    categoryName: b.category?.name ?? "",
+    currency: b.currency,
+    deliveryType: b.deliveryType,
+    deadline: b.deadline?.toISOString().slice(0, 10) ?? "",
+    deliveryDate: b.deliveryDate?.toISOString().slice(0, 10) ?? "",
+    address: b.address
+      ? [
+          b.address.street &&
+            `${b.address.street} ${b.address.outdoorNumber ?? ""}`.trim(),
+          b.address.city,
+          b.address.state,
+          b.address.country,
+          b.address.zipCode,
+        ]
+          .filter(Boolean)
+          .join(", ")
+      : "",
+    description: b.description ?? "",
+    notes: b.notes ?? "",
+    products: b.biddingProducts.map((p) => ({
+      id: p.id,
+      name: p.name,
+      internalCode: p.productCatalog.internalCode,
+      unitName: p.productCatalog.unit.name,
+      quantity: p.quantity,
+      comments: p.comments ?? "",
+      taxes: p.biddingProductTaxes.map((t) => ({
+        name: t.tax.taxName,
+        rate: Number(t.taxRate),
+      })),
+    })),
+  };
+}
+
+export type BiddingForQuote = NonNullable<
+  Awaited<ReturnType<typeof getBiddingForQuote>>
+>;

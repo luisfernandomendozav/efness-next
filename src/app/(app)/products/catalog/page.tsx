@@ -8,6 +8,7 @@ import {
   type ProductsViewer,
 } from "@/server/products";
 import { DeleteProductButton } from "@/components/products/delete-product-button";
+import { ImportErpDialog } from "@/components/products/import-erp-dialog";
 import { ImportProductsDialog } from "@/components/products/import-products-dialog";
 import { ProductFormDialog } from "@/components/products/product-form-dialog";
 import { TableSearch } from "@/components/table-search";
@@ -65,6 +66,7 @@ export default async function ProductCatalogPage({
               {t("Export")}
             </a>
           </Button>
+          {canCreate && <ImportErpDialog />}
           {canCreate && <ImportProductsDialog />}
           {canCreate && <ProductFormDialog lookups={lookups} />}
         </div>
