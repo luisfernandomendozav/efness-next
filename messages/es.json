@@ -1226,5 +1226,13 @@
   "No taxes or units are configured to import products.": "Faltan impuestos o unidades configurados para importar productos.",
   "Skipped (already in your catalog)": "Omitidos (ya estaban en tu catálogo)",
   "Only the first 500 products were imported.": "Solo se importaron los primeros 500 productos.",
-  "Missing code or description": "Falta el código o la descripción"
+  "Missing code or description": "Falta el código o la descripción",
+  "Change company": "Cambiar empresa",
+  "Add company": "Agregar empresa",
+  "Link account": "Vincular",
+  "Sign in with the credentials of your other account to link it. You will then be able to switch companies without logging out.": "Ingresa las credenciales de tu otra cuenta para vincularla. Después podrás cambiar de empresa sin cerrar sesión.",
+  "Incorrect email or password": "Correo o contraseña incorrectos",
+  "You cannot link your own account": "No puedes vincular tu propia cuenta",
+  "That account is not available": "Esa cuenta no está disponible",
+  "That account is already linked": "Esa cuenta ya está vinculada"
 }

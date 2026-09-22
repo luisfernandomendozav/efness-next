@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { getT } from "@/i18n/get-t";
 import { auth } from "@/server/auth";
+import { getLinkedAccounts } from "@/server/account-switch";
+import { db } from "@/server/db";
+import { CompanySwitcher } from "@/components/layout/company-switcher";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { SidebarRates } from "@/components/layout/sidebar-rates";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -20,7 +23,17 @@ export default async function AppLayout({
   const session = await auth();
   if (!session?.user || session.user.twoFactorPending) redirect("/login");
 
-  const [t, locale] = await Promise.all([getT(), getLocale()]);
+  const [t, locale, linkedAccounts, company] = await Promise.all([
+    getT(),
+    getLocale(),
+    getLinkedAccounts(Number(session.user.id)),
+    session.user.companyId
+      ? db.company.findUnique({
+          where: { id: session.user.companyId },
+          select: { name: true },
+        })
+      : null,
+  ]);
   const today = new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "long",
@@ -50,6 +63,11 @@ export default async function AppLayout({
         <SidebarNav isSuperadmin={session.user.roleId === SUPERADMIN_ROLE_ID} />
         <div className="mt-auto">
           <SidebarRates />
+          {/* Panel Global "Cambiar empresa" (feedback 2026-09-21). */}
+          <CompanySwitcher
+            currentCompany={company?.name ?? session.user.email ?? ""}
+            accounts={linkedAccounts}
+          />
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">

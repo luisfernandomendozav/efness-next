@@ -902,6 +902,23 @@ model UserNotificationChannel {
   @@map("user_notification_channels")
 }
 
+// Cuentas vinculadas para el Panel Global "Cambiar empresa": el usuario
+// demuestra las credenciales de su otra cuenta una vez y después puede
+// alternar entre ellas sin volver a iniciar sesión. Filas bidireccionales.
+model UserLinkedAccount {
+  id           Int       @id @default(autoincrement())
+  userId       Int       @map("user_id")
+  linkedUserId Int       @map("linked_user_id")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt    DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  user         User      @relation("user_linked_accounts_user_idTousers", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  linkedUser   User      @relation("user_linked_accounts_linked_user_idTousers", fields: [linkedUserId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, linkedUserId])
+  @@index([linkedUserId])
+  @@map("user_linked_accounts")
+}
+
 model UserType {
   id          Int       @id @default(autoincrement())
   name        String    @db.VarChar(255)
@@ -969,6 +986,8 @@ model User {
   userCategories                 UserCategory[]
   userMessageCategories          UserMessageCategory[]
   userNotificationChannels       UserNotificationChannel[]
+  linkedAccounts                 UserLinkedAccount[]       @relation("user_linked_accounts_user_idTousers")
+  linkedFromAccounts             UserLinkedAccount[]       @relation("user_linked_accounts_linked_user_idTousers")
   company                        Company?                  @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   role                           Role?                     @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   userType                       UserType?                 @relation(fields: [userTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
