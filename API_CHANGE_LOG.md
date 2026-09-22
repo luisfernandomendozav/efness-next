@@ -15,6 +15,49 @@ Entry format:
 
 ---
 
+## 2026-09-22 — Panel Global: company switcher (`d234f7a`)
+**Commit:** feat: panel global para cambiar de empresa
+
+"Cambiar empresa" panel at the bottom of the sidebar (feedback screenshot
+2026-09-21, modeled on AdminTotal's switcher). New `user_linked_accounts`
+table (migration `20260922000000`): a user links another account by proving
+its email+password once (`linkAccountAction`), rows are bidirectional, and
+`switchAccountAction` rewrites the session JWT via `unstable_update` — same
+mechanism as superadmin impersonation (`impersonation-actions.ts`).
+
+- Files: `src/server/account-switch-actions.ts` (link/switch/unlink),
+  `src/server/account-switch.ts` (read-only loader, kept out of the
+  "use server" file so it isn't a callable endpoint),
+  `src/components/layout/company-switcher.tsx`, wired in `(app)/layout.tsx`.
+- Switching clears `impersonatorId`; 2FA is not re-prompted on switch
+  (credentials were proven at link time) — revisit if that becomes a concern.
+- No unlink UI yet; `unlinkAccountAction` exists for it.
+- Demo accounts 13 (aa@efness.com) ↔ 14 (bolsas@efness.com) pre-linked by SQL.
+- Demo data: REQ-202600006 deadline extended to 2026-10-06 (it had expired,
+  which is why the seller saw no Cotizar action).
+
+## 2026-09-21 — Seller quote flow + AdminTotal ERP import (`36b151e`)
+**Commit:** feat: add seller quote flow and AdminTotal ERP catalog import
+
+Feedback WhatsApp 2026-09-19 (committed directly to main from the working
+tree). Three changes:
+
+- Requisition form: Products card now renders before General data
+  (`bidding-form.tsx`); submit footer moved to the bottom card.
+- Seller quote flow: "Cotizar" button in the Activas tab for open,
+  non-expired, not-yet-quoted requisitions (`canQuote` in
+  `src/server/biddings.ts`); new page `/biddings/quote/[id]` with per-line
+  prices, optional shipping cost and live totals; `createQuoteAction`
+  creates Quote/QuoteProduct/QuoteProductTax (folio `COT-AAAA#####` via
+  company_folio_numbers entityType "quote"), sets BiddingCompanyStatus to
+  "quoted" and moves the bidding open→quoted.
+- AdminTotal ERP import: "Importar desde ERP" dialog on /products/catalog
+  (`import-erp-dialog.tsx`, `src/server/erp-actions.ts`). Calls
+  `https://{clave}.admintotal.com/api/v2/productos/` with `Api-key` header,
+  follows pagination up to 500 products, maps codigo/descripcion/precio/id
+  → internal code/name/price/external code, defaults IVA 16% + Piece unit
+  fallback. Not yet tested against a real AdminTotal account.
+
 ## 2026-08-29 — Migrate user management page (`9bf1d5c`)
 **Commit:** feat: migrate user management page from legacy app
 
