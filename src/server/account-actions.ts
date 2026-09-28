@@ -136,9 +136,11 @@ export async function saveCategoriesAction(
 const geoScopeSchema = z.object({
   countryId: z.coerce.number().int().min(1),
   stateId: z.coerce.number().int().min(1).optional(),
-  cityName: z.string().trim().max(255).optional(),
+  cityName: z.string().trim().max(2000).optional(),
   scopeType: z.enum(["include", "exclude"]),
 });
+
+const MAX_CITIES_PER_ADD = 20;
 
 export async function addGeoScopeAction(
   _prev: AccountActionState,
@@ -155,24 +157,43 @@ export async function addGeoScopeAction(
   if (!parsed.success) return { error: "validation_error" };
   const { countryId, stateId, cityName, scopeType } = parsed.data;
 
-  // Una ciudad requiere estado; el nivel se deriva del dato más específico.
-  if (cityName && !stateId) return { error: "state_required" };
-  const level = cityName ? "city" : stateId ? "state" : "country";
+  // Varias ciudades separadas por coma en una sola captura, como permitía
+  // el legacy (feedback presentación 2026-09-26, lámina 2).
+  const cities = [
+    ...new Set(
+      (cityName ?? "")
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean),
+    ),
+  ];
+  if (cities.length > MAX_CITIES_PER_ADD) return { error: "validation_error" };
+  if (cities.some((c) => c.length > 255)) return { error: "validation_error" };
 
-  try {
-    await db.sellerGeographicScope.create({
-      data: {
-        sellerId: userId,
-        countryId,
-        stateId: stateId ?? null,
-        cityName: cityName ?? null,
-        scopeType,
-        level,
-      },
-    });
-  } catch {
-    return { error: "duplicate_scope" };
-  }
+  // Una ciudad requiere estado; el nivel se deriva del dato más específico.
+  if (cities.length > 0 && !stateId) return { error: "state_required" };
+  const level =
+    cities.length > 0
+      ? ("city" as const)
+      : stateId
+        ? ("state" as const)
+        : ("country" as const);
+
+  const base = {
+    sellerId: userId,
+    countryId,
+    stateId: stateId ?? null,
+    scopeType,
+    level,
+  };
+  const result = await db.sellerGeographicScope.createMany({
+    data:
+      cities.length > 0
+        ? cities.map((city) => ({ ...base, cityName: city }))
+        : [{ ...base, cityName: null }],
+    skipDuplicates: true,
+  });
+  if (result.count === 0) return { error: "duplicate_scope" };
 
   revalidatePath("/account");
   return { success: true };

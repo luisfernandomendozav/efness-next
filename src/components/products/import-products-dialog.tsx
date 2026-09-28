@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Upload } from "lucide-react";
+import { Download, Upload } from "lucide-react";
 import { useT } from "@/i18n/use-t";
 import { importProductsAction } from "@/server/product-actions";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,14 @@ export function ImportProductsDialog() {
           <p className="text-sm text-muted-foreground">
             {t("Upload a CSV file with the columns of the exported catalog: type, name, brand, internal code, external code, SAT key, unit, price, keywords and taxes.")}
           </p>
+          {/* Formato en blanco descargable (feedback presentación
+              2026-09-26, lámina 9). */}
+          <Button variant="secondary" size="sm" asChild>
+            <a href="/products/catalog/template" download>
+              <Download className="mr-1 h-4 w-4" />
+              {t("Download blank template")}
+            </a>
+          </Button>
           <div className="space-y-2">
             <Label htmlFor="import-file">{t("CSV file")}</Label>
             <input

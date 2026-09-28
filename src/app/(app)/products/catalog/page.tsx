@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Download, Package } from "lucide-react";
+import { getLocale } from "next-intl/server";
 import { getT } from "@/i18n/get-t";
 import { auth } from "@/server/auth";
 import {
@@ -25,13 +26,12 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
-const SUPERADMIN_ROLE_ID = 1;
-
 export default async function ProductCatalogPage({
   searchParams,
 }: PageProps<"/products/catalog">) {
-  const [t, session, query] = await Promise.all([
+  const [t, locale, session, query] = await Promise.all([
     getT(),
+    getLocale(),
     auth(),
     searchParams,
   ]);
@@ -39,18 +39,20 @@ export default async function ProductCatalogPage({
   const viewer: ProductsViewer = {
     userId: Number(session!.user.id),
     companyId: session!.user.companyId,
-    isSuperadmin: session!.user.roleId === SUPERADMIN_ROLE_ID,
   };
   const search = typeof query.search === "string" ? query.search : "";
   const page = Math.max(1, Number(query.page) || 1);
 
-  const [{ products, total, pageCount }, lookups] = await Promise.all([
-    getProducts(viewer, search, page),
-    getProductLookups(),
-  ]);
+  const [{ products, total, pageCount, lastUpdatedAt }, lookups] =
+    await Promise.all([getProducts(viewer, search, page), getProductLookups()]);
 
-  // La columna Empresa solo aporta al superadmin, que ve todos los catálogos.
-  const showCompany = viewer.isSuperadmin;
+  const dateFmt = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   const canCreate = session!.user.companyId !== null;
   const qs = (p: number) =>
     `?${new URLSearchParams({ ...(search ? { search } : {}), page: String(p) })}`;
@@ -73,14 +75,21 @@ export default async function ProductCatalogPage({
       </div>
       <Card>
         <CardContent className="space-y-4">
-          <TableSearch placeholder="Search product" />
+          {/* Fecha de última actualización junto al buscador
+              (feedback presentación 2026-09-26, lámina 7). */}
+          <div className="flex flex-wrap items-center gap-3">
+            <TableSearch placeholder="Search product" />
+            <span className="text-sm text-muted-foreground">
+              {t("Last updated")}:{" "}
+              {lastUpdatedAt ? dateFmt.format(new Date(lastUpdatedAt)) : "—"}
+            </span>
+          </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("Image")}</TableHead>
                   <TableHead>{t("Name")}</TableHead>
-                  {showCompany && <TableHead>{t("Company")}</TableHead>}
                   <TableHead>{t("Brand")}</TableHead>
                   <TableHead>{t("Internal code")}</TableHead>
                   <TableHead>{t("External code")}</TableHead>
@@ -116,7 +125,6 @@ export default async function ProductCatalogPage({
                     >
                       {p.name}
                     </TableCell>
-                    {showCompany && <TableCell>{p.companyName}</TableCell>}
                     <TableCell>{p.brand || "N/A"}</TableCell>
                     <TableCell>{p.internalCode}</TableCell>
                     <TableCell>{p.externalCode || "N/A"}</TableCell>
@@ -173,7 +181,7 @@ export default async function ProductCatalogPage({
                 {products.length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={showCompany ? 13 : 12}
+                      colSpan={12}
                       className="py-10 text-center text-muted-foreground"
                     >
                       {t("No matching records found")}

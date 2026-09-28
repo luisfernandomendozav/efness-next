@@ -150,6 +150,14 @@ function ScopeRow({
   );
 }
 
+const selectClass =
+  "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
+
+// Réplica de la mecánica del GeographicScopeManagement legacy (feedback
+// presentación 2026-09-26, lámina 2): país completo, estado completo o
+// ciudades específicas, cada uno incluible o excluible; combinando reglas
+// se cubre p. ej. "todo el estado excepto ciertas ciudades". El mapa con
+// colores del legacy (Google Maps) queda pendiente.
 export function GeoScopesForm({
   countries,
   states,
@@ -165,7 +173,10 @@ export function GeoScopesForm({
     undefined,
   );
   const [countryId, setCountryId] = useState(countries[0]?.id ?? 0);
+  const [mode, setMode] = useState<"country" | "state" | "cities">("country");
   const countryStates = states.filter((s) => s.countryId === countryId);
+  const included = scopes.filter((s) => s.scopeType === "include");
+  const excluded = scopes.filter((s) => s.scopeType === "exclude");
 
   return (
     <Card>
@@ -177,9 +188,22 @@ export function GeoScopesForm({
         <p className="text-sm text-muted-foreground">
           {t("Define the areas where your company operates. As a supplier, this filters the opportunities you see.")}
         </p>
-        {scopes.length > 0 && (
+        {included.length > 0 && (
           <div className="space-y-2">
-            {scopes.map((scope) => (
+            <p className="text-xs font-semibold uppercase text-[#569842]">
+              {t("Included zones")}
+            </p>
+            {included.map((scope) => (
+              <ScopeRow key={scope.id} scope={scope} />
+            ))}
+          </div>
+        )}
+        {excluded.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase text-[#f8285a]">
+              {t("Excluded zones")}
+            </p>
+            {excluded.map((scope) => (
               <ScopeRow key={scope.id} scope={scope} />
             ))}
           </div>
@@ -187,12 +211,26 @@ export function GeoScopesForm({
         <form action={formAction} className="space-y-3 rounded-md border p-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
+              <Label>{t("Zone type")}</Label>
+              <select
+                value={mode}
+                onChange={(e) =>
+                  setMode(e.target.value as "country" | "state" | "cities")
+                }
+                className={selectClass}
+              >
+                <option value="country">{t("Whole country")}</option>
+                <option value="state">{t("Whole state")}</option>
+                <option value="cities">{t("Specific cities")}</option>
+              </select>
+            </div>
+            <div className="space-y-2">
               <Label>{t("Country")}</Label>
               <select
                 name="countryId"
                 value={countryId}
                 onChange={(e) => setCountryId(Number(e.target.value))}
-                className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                className={selectClass}
               >
                 {countries.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -201,37 +239,44 @@ export function GeoScopesForm({
                 ))}
               </select>
             </div>
-            <div className="space-y-2">
-              <Label>{t("State")}</Label>
-              <select
-                name="stateId"
-                defaultValue=""
-                className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-              >
-                <option value="">{t("All states")}</option>
-                {countryStates.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
+            {mode !== "country" && (
+              <div className="space-y-2">
+                <Label>{t("State")}</Label>
+                <select name="stateId" defaultValue="" required className={selectClass}>
+                  <option value="" disabled>
+                    {t("Select a state")}
                   </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="geo-city">{t("City (optional)")}</Label>
-              <Input id="geo-city" name="cityName" maxLength={255} />
-            </div>
+                  {countryStates.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {mode === "cities" && (
+              <div className="space-y-2">
+                <Label htmlFor="geo-city">{t("Cities (comma separated)")}</Label>
+                <Input
+                  id="geo-city"
+                  name="cityName"
+                  required
+                  maxLength={2000}
+                  placeholder="Hermosillo, Nogales, Guaymas"
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label>{t("Scope type")}</Label>
-              <select
-                name="scopeType"
-                defaultValue="include"
-                className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-              >
+              <select name="scopeType" defaultValue="include" className={selectClass}>
                 <option value="include">{t("Include")}</option>
                 <option value="exclude">{t("Exclude")}</option>
               </select>
             </div>
           </div>
+          <p className="text-xs text-muted-foreground">
+            {t("Tip: to cover a whole state except some cities, include the state and then exclude those cities.")}
+          </p>
           <div className="flex justify-end">
             <Button type="submit" disabled={pending}>
               {pending ? t("Please wait") : t("Add zone")}

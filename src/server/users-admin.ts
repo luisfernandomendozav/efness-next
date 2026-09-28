@@ -3,11 +3,16 @@ import { db } from "@/server/db";
 
 export const USERS_PAGE_SIZE = 10;
 
-// Réplica de UserRepository::allWithRelationsExcept. El legacy filtra por la
-// empresa del superadmin; el nuestro no tiene empresa, así que lista todos
-// los usuarios excepto él mismo.
+export const SUPERADMIN_ROLE_ID = 1;
+
+// Réplica de UserRepository::allWithRelationsExcept. Como el legacy, la
+// gestión de usuarios es de la empresa del superadmin: un superadmin y sus
+// usuarios (feedback presentación 2026-09-26, lámina 3). Incluye al propio
+// superadmin para que quede claro quién es. Un superadmin sin empresa
+// (operación de la plataforma) sigue viendo todos.
 export async function getUsersAdmin(
   viewerId: number,
+  viewerCompanyId: number | null,
   search: string,
   page: number,
 ) {
@@ -15,7 +20,7 @@ export async function getUsersAdmin(
     ? { contains: search, mode: "insensitive" as const }
     : null;
   const where: Prisma.UserWhereInput = {
-    id: { not: viewerId },
+    ...(viewerCompanyId === null ? {} : { companyId: viewerCompanyId }),
     ...(s ? { OR: [{ name: s }, { lastName: s }, { email: s }] } : {}),
   };
 
@@ -29,6 +34,7 @@ export async function getUsersAdmin(
         email: true,
         avatar: true,
         userTypeId: true,
+        roleId: true,
         twoFactorAuthenticationEnabled: true,
         createdAt: true,
         userType: { select: { name: true } },
@@ -51,6 +57,7 @@ export async function getUsersAdmin(
       avatar: u.avatar,
       userTypeId: u.userTypeId,
       userTypeName: u.userType?.name ?? null,
+      isSuperadmin: u.roleId === SUPERADMIN_ROLE_ID,
       companyName: u.company?.name ?? null,
       twoFactorEnabled: u.twoFactorAuthenticationEnabled,
       createdAt: u.createdAt?.toISOString() ?? null,

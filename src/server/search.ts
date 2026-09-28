@@ -200,28 +200,54 @@ export type SearchProductRow = Awaited<
 >["products"][number];
 
 export async function getSearchLookups() {
-  const [categories, companies, productTypes, locations] = await Promise.all([
-    db.category.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-    db.company.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-    db.productType.findMany({ select: { id: true, name: true } }),
-    db.company.findMany({
-      where: { country: { not: null } },
-      select: { country: true, state: true, city: true },
-      distinct: ["country", "state", "city"],
-    }),
-  ]);
+  const [categories, companies, productTypes, companyLocations, dbCountries] =
+    await Promise.all([
+      db.category.findMany({
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      }),
+      db.company.findMany({
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      }),
+      db.productType.findMany({ select: { id: true, name: true } }),
+      db.company.findMany({
+        where: { country: { not: null } },
+        select: { country: true, state: true, city: true },
+        distinct: ["country", "state", "city"],
+      }),
+      // El catálogo de países (México y Estados Unidos) siempre aparece en
+      // el filtro, aunque ninguna empresa registre aún ese país (feedback
+      // presentación 2026-09-26, lámina 5).
+      db.country.findMany({
+        include: { states: { select: { name: true } } },
+        orderBy: { name: "asc" },
+      }),
+    ]);
 
   const countries = [
-    ...new Set(locations.map((l) => l.country).filter(Boolean)),
-  ] as string[];
+    ...new Set([
+      ...dbCountries.map((c) => c.name),
+      ...(companyLocations.map((l) => l.country).filter(Boolean) as string[]),
+    ]),
+  ];
 
-  return { categories, companies, productTypes, locations, countries };
+  // Los estados del catálogo alimentan el filtro en cascada aun sin
+  // empresas registradas en ellos.
+  const known = new Set(companyLocations.map((l) => `${l.country}|${l.state}`));
+  const catalogLocations = dbCountries.flatMap((c) =>
+    c.states
+      .filter((s) => !known.has(`${c.name}|${s.name}`))
+      .map((s) => ({ country: c.name, state: s.name, city: null })),
+  );
+
+  return {
+    categories,
+    companies,
+    productTypes,
+    locations: [...companyLocations, ...catalogLocations],
+    countries,
+  };
 }
 
 export type SearchLookups = Awaited<ReturnType<typeof getSearchLookups>>;

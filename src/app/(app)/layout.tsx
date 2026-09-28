@@ -6,6 +6,7 @@ import { getT } from "@/i18n/get-t";
 import { auth } from "@/server/auth";
 import { getLinkedAccounts } from "@/server/account-switch";
 import { db } from "@/server/db";
+import { ChatDock } from "@/components/chat/chat-dock";
 import { CompanySwitcher } from "@/components/layout/company-switcher";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { SidebarRates } from "@/components/layout/sidebar-rates";
@@ -97,6 +98,9 @@ export default async function AppLayout({
         </header>
         <main className="flex-1 bg-muted/40 p-6">{children}</main>
       </div>
+      {/* Chat de aliados colapsado, disponible en toda la app
+          (feedback presentación 2026-09-26, lámina 10). */}
+      <ChatDock />
     </div>
   );
 }

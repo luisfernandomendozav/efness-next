@@ -234,12 +234,11 @@ export function SearchFilters({
         )}
       </div>
 
+      {/* Solo Restablecer: Aplicar duplicaba al botón Buscar
+          (feedback presentación 2026-09-26, lámina 6). */}
       <div className="flex justify-end gap-2">
         <Button type="button" variant="secondary" size="sm" onClick={reset}>
           {t("Reset")}
-        </Button>
-        <Button type="submit" size="sm">
-          {t("Apply")}
         </Button>
       </div>
     </form>

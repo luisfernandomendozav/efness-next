@@ -64,7 +64,7 @@ export default async function MyNetworkPage({
   const search = typeof query.search === "string" ? query.search : "";
 
   const [potential, allies, received, sent] = await Promise.all([
-    getPotentialAllies(userId, 12),
+    getPotentialAllies(userId, 12, search),
     getAllies(userId, search),
     getReceivedRequests(userId),
     getSentRequests(userId),
@@ -98,7 +98,11 @@ export default async function MyNetworkPage({
           </div>
 
           {tab === "potential" ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-4">
+              {/* Buscador de aliados potenciales, como el de "Mis aliados"
+                  (feedback presentación 2026-09-26, lámina 4). */}
+              <TableSearch placeholder="Search potential allies" />
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {potential.map((ally) => (
                 <Card key={ally.id}>
                   <CardContent className="flex flex-col items-center gap-3 text-center">
@@ -120,11 +124,12 @@ export default async function MyNetworkPage({
                   </CardContent>
                 </Card>
               ))}
-              {potential.length === 0 && (
-                <p className="col-span-full py-10 text-center text-muted-foreground">
-                  {t("No potential allies found")}
-                </p>
-              )}
+                {potential.length === 0 && (
+                  <p className="col-span-full py-10 text-center text-muted-foreground">
+                    {t("No potential allies found")}
+                  </p>
+                )}
+              </div>
             </div>
           ) : (
             <Card>

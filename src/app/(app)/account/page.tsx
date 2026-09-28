@@ -6,6 +6,7 @@ import { db } from "@/server/db";
 import { getBusinessProfile } from "@/server/account-business";
 import {
   getCompanyDetails,
+  getCompanySuperadmin,
   getCompanyUsers,
   getDeliveryAddresses,
   getSubscriptionInfo,
@@ -47,9 +48,19 @@ export default async function AccountPage() {
   ]);
   const userId = Number(session!.user.id);
   const companyId = session!.user.companyId;
+  // Las direcciones de entrega solo aplican a compradores: se usan en sus
+  // requisiciones (feedback presentación 2026-09-26, lámina 1).
+  const isSupplier = session!.user.userTypeId === 1;
 
-  const [user, business, addresses, company, companyUsers, subscription] =
-    await Promise.all([
+  const [
+    user,
+    business,
+    addresses,
+    company,
+    companyUsers,
+    companySuperadmin,
+    subscription,
+  ] = await Promise.all([
       db.user.findUnique({
         where: { id: userId },
         select: {
@@ -68,6 +79,7 @@ export default async function AccountPage() {
       getDeliveryAddresses(userId),
       getCompanyDetails(companyId),
       getCompanyUsers(companyId, userId),
+      getCompanySuperadmin(companyId),
       getSubscriptionInfo(userId),
     ]);
   if (!user) notFound();
@@ -108,16 +120,22 @@ export default async function AccountPage() {
             phoneCountryCode={user.phoneCountryCode}
             phone={user.phone}
           />
-          <AddressesCard
-            addresses={addresses}
-            countries={business.countries}
-            states={business.states}
-          />
+          {!isSupplier && (
+            <AddressesCard
+              addresses={addresses}
+              countries={business.countries}
+              states={business.states}
+            />
+          )}
         </TabsContent>
 
         {company && (
           <TabsContent value="company" className="mt-4 space-y-5">
-            <CompanyForm company={company} />
+            <CompanyForm
+              company={company}
+              countries={business.countries}
+              states={business.states}
+            />
           </TabsContent>
         )}
 
@@ -149,7 +167,20 @@ export default async function AccountPage() {
               <CardHeader>
                 <CardTitle>{t("Users in your company")}</CardTitle>
               </CardHeader>
-              <CardContent className="pt-4">
+              <CardContent className="space-y-4 pt-4">
+                {/* Cada usuario sabe quién es su superadmin (feedback
+                    presentación 2026-09-26, lámina 3). */}
+                {companySuperadmin && (
+                  <p className="text-sm text-muted-foreground">
+                    {t("Your company's superadmin")}:{" "}
+                    <span className="font-medium text-foreground">
+                      {companySuperadmin.id === userId
+                        ? t("You")
+                        : companySuperadmin.fullName}
+                    </span>{" "}
+                    ({companySuperadmin.email})
+                  </p>
+                )}
                 {companyUsers.length === 0 ? (
                   <p className="py-6 text-center text-sm text-muted-foreground">
                     {t("There are no other users in your company yet.")}

@@ -119,7 +119,13 @@ export type FeedPost = FeedResult["posts"][number];
 
 // Réplica de FriendshipService::getPotentialAllies: usuarios activos que no
 // son el propio usuario, ni aliados actuales, ni tienen solicitud pendiente.
-export async function getPotentialAllies(viewerId: number, limit = 9) {
+// Con búsqueda por nombre o empresa (feedback presentación 2026-09-26,
+// lámina 4), igual que "Mis aliados".
+export async function getPotentialAllies(
+  viewerId: number,
+  limit = 9,
+  search = "",
+) {
   const [friendIds, pending] = await Promise.all([
     getFriendIds(viewerId),
     db.friendRequest.findMany({
@@ -136,8 +142,17 @@ export async function getPotentialAllies(viewerId: number, limit = 9) {
     ...pending.map((r) => (r.senderId === viewerId ? r.receiverId : r.senderId)),
   ];
 
+  const s = search
+    ? { contains: search, mode: "insensitive" as const }
+    : null;
   const users = await db.user.findMany({
-    where: { id: { notIn: excluded }, accountStatus: "active" },
+    where: {
+      id: { notIn: excluded },
+      accountStatus: "active",
+      ...(s
+        ? { OR: [{ name: s }, { lastName: s }, { company: { name: s } }] }
+        : {}),
+    },
     select: {
       id: true,
       name: true,
