@@ -76,9 +76,10 @@ new committed `.env.example`): `SENDGRID_API_KEY`, `SENDGRID_EMAIL_FROM`,
 Without credentials, emails are logged to console (dev mode). Remember to
 set the vars in Vercel for production.
 
-- `src/server/services/email.ts` — generic `sendEmail()` against SendGrid
-  API v3 (`POST /v3/mail/send`, 202 = queued); `sendVerificationEmail`
-  (registration) now rides on it.
+- `src/server/services/email.ts` — generic `sendEmail()` using the
+  official `@sendgrid/mail` library (`sgMail.setApiKey` + `sgMail.send`;
+  `setDataResidency("eu")` left commented for EU subusers);
+  `sendVerificationEmail` (registration) now rides on it.
 - `src/server/services/notifications.ts` — port of the legacy
   `BiddingController::sendNotificationNewBidding` +
   `EmailNotificationStrategy`: on bidding creation, suppliers whose

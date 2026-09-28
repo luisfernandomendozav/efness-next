@@ -1,8 +1,12 @@
+import sgMail from "@sendgrid/mail";
+
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-// Correo transaccional vía SendGrid, como EmailSender del backend legacy
-// (config/services.php: SENDGRID_API_KEY + SENDGRID_EMAIL_FROM). Sin las
-// variables configuradas los correos solo se registran en consola (dev).
+// Correo transaccional vía SendGrid con la librería oficial @sendgrid/mail
+// (https://github.com/sendgrid/sendgrid-nodejs), como EmailSender del
+// backend legacy (config/services.php: SENDGRID_API_KEY +
+// SENDGRID_EMAIL_FROM). Sin las variables configuradas los correos solo se
+// registran en consola (dev).
 
 export async function sendEmail({
   to,
@@ -22,31 +26,24 @@ export async function sendEmail({
     return true;
   }
 
-  const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      personalizations: [
-        { to: [{ email: to, ...(toName ? { name: toName } : {}) }] },
-      ],
+  sgMail.setApiKey(apiKey);
+  // sgMail.setDataResidency("eu"); // solo para subusuarios EU de SendGrid
+
+  try {
+    await sgMail.send({
+      to: toName ? { email: to, name: toName } : to,
       from: {
         email: from,
         name: process.env.SENDGRID_EMAIL_FROM_NAME ?? "Efness Company",
       },
       subject,
-      content: [{ type: "text/html", value: html }],
-    }),
-  });
-
-  // SendGrid responde 202 Accepted cuando encola el envío.
-  if (res.status !== 202) {
-    console.error(`SendGrid ${res.status} enviando a ${to}: ${await res.text()}`);
+      html,
+    });
+    return true;
+  } catch (error) {
+    console.error(`SendGrid error enviando a ${to}:`, error);
     return false;
   }
-  return true;
 }
 
 export async function sendVerificationEmail(email: string, name: string, token: string) {
