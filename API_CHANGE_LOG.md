@@ -15,6 +15,57 @@ Entry format:
 
 ---
 
+## 2026-09-28 — Feedback presentación 2026-09-26: 10 láminas (`c7ff3d7`)
+**Commit:** feat: sugerencias de la presentación 2026-09-26
+
+All ten items from "sugerencias efness 250926.pptx" (slides committed to
+`docs/feedback-2026-09-26/`):
+
+- **Lámina 1** — `AddressesCard` hidden for suppliers (`userTypeId === 1`)
+  on the account Profile tab; delivery addresses only feed buyer
+  requisitions.
+- **Lámina 2** — `GeoScopesForm` reworked to the legacy semantics: zone
+  type select (whole country / whole state / specific cities),
+  comma-separated multi-city capture (`addGeoScopeAction` now does
+  `createMany` + `skipDuplicates`, max 20 cities per add), grouped
+  include/exclude lists. **Pending follow-up:** the legacy colored map
+  (Google Maps polygons fed by `boundary_coordinates` — data lives in the
+  legacy repo's `mexico-states.json` 27MB / `us-states.json` seeders;
+  needs a Maps API key).
+- **Lámina 3** — `getUsersAdmin` scoped to the superadmin's company (like
+  the legacy `UserRepository`; a company-less superadmin still sees all),
+  includes the viewer, new Rol column (Superadmin badge), no
+  delete/impersonate buttons on self. Account Users tab shows "El
+  superadmin de tu empresa" via `getCompanySuperadmin`.
+- **Lámina 4** — potential allies search: `getPotentialAllies` accepts
+  `search`, `TableSearch` added to that tab in `/my-network`.
+- **Lámina 5** — `getSearchLookups` unions `countries`/`states` catalog
+  tables into the country/state filters (US was already in the DB but the
+  lookups were company-derived only); company form country/state are now
+  cascading selects (still stored as strings; out-of-catalog stored
+  values kept as extra options).
+- **Lámina 6** — removed the duplicate "Aplicar" button in
+  `search-filters.tsx` (identical handler to "Buscar").
+- **Lámina 7** — catalog (`getProducts`, export route) now shows only
+  `createdBy: viewer` for everyone incl. superadmin; Empresa column
+  removed; "Fecha de última actualización" (max `updatedAt`, unfiltered)
+  shown next to the search box.
+- **Lámina 8** — `ImportErpDialog` got an ERP chooser step (AdminTotal
+  available; CONTPAQi/SAP/Odoo listed as "Próximamente" disabled).
+- **Lámina 9** — blank import template at
+  `/products/catalog/template` (CSV headers + one example row) linked
+  from the import dialog ("Descargar formato en blanco").
+- **Lámina 10** — ally chat (`ChatDock` mounted in the app layout):
+  Facebook-style collapsed dock, contact list with last message + unread
+  counts, history, text + file (image/PDF via Vercel Blob `chat/` folder)
+  messages over the migrated `conversations`/`conversation_users`/
+  `messages` tables. Polling (15s contacts / 4s open conversation) via
+  `/api/chat/contacts` and `/api/chat/messages`; server actions in
+  `chat-actions.ts` restrict chatting to allies. **Pending follow-ups:**
+  online/offline presence (was also TODO in the legacy) and real-time
+  push (legacy used Laravel Echo + Pusher; `pusher-js` is already a
+  dependency).
+
 ## 2026-09-22 — Panel Global: company switcher (`d234f7a`)
 **Commit:** feat: panel global para cambiar de empresa
 
