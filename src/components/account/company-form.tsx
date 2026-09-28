@@ -36,9 +36,30 @@ export type CompanyDetailsData = {
   logo: string | null;
 };
 
-export function CompanyForm({ company }: { company: CompanyDetailsData }) {
+export type CompanyGeoOption = { id: number; name: string };
+
+export function CompanyForm({
+  company,
+  countries,
+  states,
+}: {
+  company: CompanyDetailsData;
+  countries: CompanyGeoOption[];
+  states: Array<CompanyGeoOption & { countryId: number }>;
+}) {
   const t = useT();
   const [preview, setPreview] = useState<string | null>(null);
+  // País y estado salen del catálogo (México y Estados Unidos; feedback
+  // presentación 2026-09-26, lámina 5). Se guardan como texto, igual que
+  // antes, así que un valor previo fuera del catálogo se conserva como
+  // opción extra.
+  const [country, setCountry] = useState(company.country ?? "");
+  const [companyState, setCompanyState] = useState(company.state ?? "");
+  const countryNames = countries.map((c) => c.name);
+  const selectedCountry = countries.find((c) => c.name === country);
+  const stateNames = selectedCountry
+    ? states.filter((s) => s.countryId === selectedCountry.id).map((s) => s.name)
+    : [];
   const [state, formAction, pending] = useActionState(
     updateCompanyAction,
     undefined,
@@ -124,19 +145,46 @@ export function CompanyForm({ company }: { company: CompanyDetailsData }) {
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="c-country">{t("Country")}</Label>
-              <Input
+              <select
                 id="c-country"
                 name="country"
-                defaultValue={company.country ?? ""}
-              />
+                value={country}
+                onChange={(e) => {
+                  setCountry(e.target.value);
+                  setCompanyState("");
+                }}
+                className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="">—</option>
+                {country && !countryNames.includes(country) && (
+                  <option value={country}>{country}</option>
+                )}
+                {countries.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="c-state">{t("State")}</Label>
-              <Input
+              <select
                 id="c-state"
                 name="state"
-                defaultValue={company.state ?? ""}
-              />
+                value={companyState}
+                onChange={(e) => setCompanyState(e.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="">—</option>
+                {companyState && !stateNames.includes(companyState) && (
+                  <option value={companyState}>{companyState}</option>
+                )}
+                {stateNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="c-city">{t("City")}</Label>

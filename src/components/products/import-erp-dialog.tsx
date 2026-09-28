@@ -32,22 +32,73 @@ const ROW_ERRORS: Record<string, string> = {
   unknown_error: "Error saving product",
 };
 
+// ERPs disponibles para importar. Por ahora solo AdminTotal tiene
+// integración; el selector previo deja listo el camino para agregar más
+// (feedback presentación 2026-09-26, lámina 8).
+const ERPS = [
+  { id: "admintotal", name: "AdminTotal", available: true },
+  { id: "contpaqi", name: "CONTPAQi", available: false },
+  { id: "sap", name: "SAP Business One", available: false },
+  { id: "odoo", name: "Odoo", available: false },
+] as const;
+
 export function ImportErpDialog() {
   const t = useT();
   const [open, setOpen] = useState(false);
+  const [erp, setErp] = useState<string | null>(null);
   const [state, formAction, pending] = useActionState(
     importErpProductsAction,
     undefined,
   );
 
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) setErp(null);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="secondary">
           <Plug className="mr-1 h-4 w-4" />
           {t("Import from ERP")}
         </Button>
       </DialogTrigger>
+      {erp === null ? (
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t("Select your ERP")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              {t("Choose the ERP you want to import your catalog from.")}
+            </p>
+            {ERPS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                disabled={!option.available}
+                onClick={() => setErp(option.id)}
+                className="flex w-full items-center justify-between rounded-md border px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
+              >
+                {option.name}
+                <span className="text-xs font-normal text-muted-foreground">
+                  {option.available ? t("Available") : t("Coming soon")}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => handleOpenChange(false)}
+            >
+              {t("Close")}
+            </Button>
+          </div>
+        </DialogContent>
+      ) : (
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("Import catalog from AdminTotal")}</DialogTitle>
@@ -113,9 +164,9 @@ export function ImportErpDialog() {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => setOpen(false)}
+              onClick={() => setErp(null)}
             >
-              {t("Close")}
+              {t("Back")}
             </Button>
             <Button type="submit" disabled={pending}>
               {pending ? t("Please wait...") : t("Import")}
@@ -123,6 +174,7 @@ export function ImportErpDialog() {
           </div>
         </form>
       </DialogContent>
+      )}
     </Dialog>
   );
 }

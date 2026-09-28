@@ -48,6 +48,23 @@ export async function getCompanyDetails(companyId: number | null) {
   return company;
 }
 
+// Quién es el superadmin de la empresa, para mostrárselo a los demás
+// usuarios (feedback presentación 2026-09-26, lámina 3).
+export async function getCompanySuperadmin(companyId: number | null) {
+  if (companyId === null) return null;
+  const user = await db.user.findFirst({
+    where: { companyId, roleId: 1 },
+    select: { id: true, name: true, lastName: true, email: true },
+    orderBy: { id: "asc" },
+  });
+  if (!user) return null;
+  return {
+    id: user.id,
+    fullName: `${user.name} ${user.lastName}`.trim(),
+    email: user.email,
+  };
+}
+
 export async function getCompanyUsers(
   companyId: number | null,
   excludeUserId: number,

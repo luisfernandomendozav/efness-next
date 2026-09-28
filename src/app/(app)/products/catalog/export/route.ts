@@ -2,16 +2,14 @@ import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import { toCsv } from "@/server/product-csv";
 
-const SUPERADMIN_ROLE_ID = 1;
-
-// Exporta el catálogo del usuario (o todo, para el superadmin) en CSV.
+// Exporta el catálogo propio en CSV; también para el superadmin, igual que
+// la pantalla de catálogo (feedback presentación 2026-09-26, lámina 7).
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
-  const isSuperadmin = session.user.roleId === SUPERADMIN_ROLE_ID;
 
   const products = await db.productCatalog.findMany({
-    where: isSuperadmin ? {} : { createdBy: Number(session.user.id) },
+    where: { createdBy: Number(session.user.id) },
     include: {
       productType: { select: { name: true } },
       unit: { select: { name: true } },

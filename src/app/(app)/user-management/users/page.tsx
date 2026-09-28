@@ -36,10 +36,12 @@ export default async function UserManagementPage({
   ]);
   if (session?.user.roleId !== SUPERADMIN_ROLE_ID) redirect("/dashboard");
 
+  const viewerId = Number(session.user.id);
   const search = typeof query.search === "string" ? query.search : "";
   const page = Math.max(1, Number(query.page) || 1);
   const { users, total, pageCount } = await getUsersAdmin(
-    Number(session.user.id),
+    viewerId,
+    session.user.companyId,
     search,
     page,
   );
@@ -66,6 +68,7 @@ export default async function UserManagementPage({
               <TableRow>
                 <TableHead>{t("Name")}</TableHead>
                 <TableHead>{t("Company")}</TableHead>
+                <TableHead>{t("Role")}</TableHead>
                 <TableHead>{t("User type")}</TableHead>
                 <TableHead>{t("Two steps")}</TableHead>
                 <TableHead>{t("Joined day")}</TableHead>
@@ -100,6 +103,17 @@ export default async function UserManagementPage({
                   </TableCell>
                   <TableCell>{u.companyName || "—"}</TableCell>
                   <TableCell>
+                    {/* Quién es el superadmin queda visible en la tabla
+                        (feedback presentación 2026-09-26, lámina 3). */}
+                    {u.isSuperadmin ? (
+                      <Badge className="bg-[#1d2747] text-white">
+                        {t("Superadmin")}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">{t("User")}</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     {u.userTypeId ? (
                       <Badge variant="secondary">
                         {t(USER_TYPE_LABELS[u.userTypeId] ?? String(u.userTypeId))}
@@ -125,8 +139,18 @@ export default async function UserManagementPage({
                   <TableCell className="text-right">
                     <div className="flex justify-end">
                       <UserFormDialog user={u} />
-                      <DeleteUserButton userId={u.id} userName={u.fullName} />
-                      <ImpersonateButton userId={u.id} userName={u.fullName} />
+                      {u.id !== viewerId && (
+                        <>
+                          <DeleteUserButton
+                            userId={u.id}
+                            userName={u.fullName}
+                          />
+                          <ImpersonateButton
+                            userId={u.id}
+                            userName={u.fullName}
+                          />
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -134,7 +158,7 @@ export default async function UserManagementPage({
               {users.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="py-10 text-center text-muted-foreground"
                   >
                     {t("No matching records found")}

@@ -6,7 +6,6 @@ export const PRODUCTS_PAGE_SIZE = 10;
 export type ProductsViewer = {
   userId: number;
   companyId: number | null;
-  isSuperadmin: boolean;
 };
 
 function searchWhere(search: string): Prisma.ProductCatalogWhereInput {
@@ -27,20 +26,20 @@ export async function getProducts(
   search: string,
   page: number,
 ) {
-  // Cada usuario ve solo los productos que él creó; el superadmin ve todos
-  // (feedback presentación 2026-09; antes era por empresa).
+  // Cada usuario ve solo los productos que él creó, también el superadmin:
+  // el catálogo es la gestión del catálogo propio (feedback presentación
+  // 2026-09-26, lámina 7; antes el superadmin veía todos).
   const where: Prisma.ProductCatalogWhereInput = {
-    ...(viewer.isSuperadmin ? {} : { createdBy: viewer.userId }),
+    createdBy: viewer.userId,
     ...(search ? searchWhere(search) : {}),
   };
 
-  const [rows, total] = await Promise.all([
+  const [rows, total, latest] = await Promise.all([
     db.productCatalog.findMany({
       where,
       include: {
         productType: { select: { name: true } },
         unit: { select: { name: true } },
-        company: { select: { name: true } },
         productCatalogTaxes: {
           include: { tax: { select: { taxName: true } } },
         },
@@ -50,12 +49,18 @@ export async function getProducts(
       skip: (page - 1) * PRODUCTS_PAGE_SIZE,
     }),
     db.productCatalog.count({ where }),
+    // Fecha de última actualización del catálogo propio, sin filtro de
+    // búsqueda (se muestra junto al buscador).
+    db.productCatalog.aggregate({
+      where: { createdBy: viewer.userId },
+      _max: { updatedAt: true },
+    }),
   ]);
 
   return {
+    lastUpdatedAt: latest._max.updatedAt?.toISOString() ?? null,
     products: rows.map((p) => ({
       id: p.id,
-      companyName: p.company.name,
       name: p.name,
       brand: p.brand,
       internalCode: p.internalCode,
