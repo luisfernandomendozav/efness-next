@@ -66,6 +66,34 @@ All ten items from "sugerencias efness 250926.pptx" (slides committed to
   push (legacy used Laravel Echo + Pusher; `pusher-js` is already a
   dependency).
 
+## 2026-09-28 — SendGrid email transport + new-bidding notifications (`ab7a3a5`)
+**Commit:** feat: correos vía SendGrid y aviso de nueva requisición a proveedores
+
+Email now goes through **SendGrid** (the legacy `EmailSender` used it too),
+replacing the earlier Resend stub. Env vars (placeholders in `.env` and the
+new committed `.env.example`): `SENDGRID_API_KEY`, `SENDGRID_EMAIL_FROM`,
+`SENDGRID_EMAIL_FROM_NAME` (default "Efness Company", the legacy from-name).
+Without credentials, emails are logged to console (dev mode). Remember to
+set the vars in Vercel for production.
+
+- `src/server/services/email.ts` — generic `sendEmail()` against SendGrid
+  API v3 (`POST /v3/mail/send`, 202 = queued); `sendVerificationEmail`
+  (registration) now rides on it.
+- `src/server/services/notifications.ts` — port of the legacy
+  `BiddingController::sendNotificationNewBidding` +
+  `EmailNotificationStrategy`: on bidding creation, suppliers whose
+  category and include-geoscopes match (inverse of `sellerActiveExtras`)
+  get the "Recibiste una nueva requisición de cotización" email (es/en by
+  `user.language`), honoring the `mail` notification-channel preference
+  (subscribed by default, same as the account Subscription tab). Each send
+  is logged as a `notifications` row (`sendStatus` sent/failed,
+  messageCategory `bidding`), like the legacy `NotificationLogger`.
+- `createBiddingAction` fires the fan-out with `after()` from
+  `next/server`, so the redirect isn't delayed (legacy used a queued job).
+- **Pending follow-ups:** the other legacy channels (sms, push, in-app,
+  whatsapp) and password-reset email (that flow doesn't exist in the
+  rewrite yet).
+
 ## 2026-09-22 — Panel Global: company switcher (`d234f7a`)
 **Commit:** feat: panel global para cambiar de empresa
 
