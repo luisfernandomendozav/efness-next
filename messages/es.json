@@ -594,6 +594,7 @@
   "Enter your email to reset your password.": "Ingrese su correo electrónico para restablecer su contraseña.",
   "Enter your new password to reset your password.": "Ingrese su nueva contraseña para restablecer su contraseña.",
   "Passwords must match": "Las contraseña deben coincidir",
+  "The password reset link is invalid or has expired": "El enlace para restablecer la contraseña no es válido o ha expirado.",
   "Sorry, looks like there are some errors detected, please try again. If you requested another recovery link, please wait for the email.": "Lo siento, parece que hay algunos errores detectados, por favor intenta de nuevo. Si solicitaste otro link de recuperación por favor espera el correo",
   "Password has been reset successfully. Redirecting to login...": "La contraseña ha sido restablecida correctamente. Redireccionando al inicio de sesión...",
   "Sent password reset. Please check your email": "Enviado restablecer contraseña. Por favor, compruebe su correo electrónico",
