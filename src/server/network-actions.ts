@@ -13,6 +13,7 @@ async function requireUserId() {
 function revalidateNetwork() {
   revalidatePath("/my-network");
   revalidatePath("/dashboard");
+  revalidatePath("/users/[id]", "page");
 }
 
 // Réplica de FriendshipService::acceptFriendRequest: marca la solicitud como

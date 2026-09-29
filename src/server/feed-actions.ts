@@ -113,4 +113,5 @@ export async function sendAllyRequestAction(receiverId: number) {
   });
   revalidatePath("/dashboard");
   revalidatePath("/my-network");
+  revalidatePath("/users/[id]", "page");
 }

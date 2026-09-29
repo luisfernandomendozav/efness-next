@@ -9,6 +9,7 @@ import {
   type SearchFilters as Filters,
   type SearchViewer,
 } from "@/server/search";
+import { LinkRow } from "@/components/search/link-row";
 import { SearchFilters } from "@/components/search/search-filters";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -111,7 +112,7 @@ export default async function AdvancedSearchPage({
               </TableHeader>
               <TableBody>
                 {usersResult.users.map((u) => (
-                  <TableRow key={u.id}>
+                  <LinkRow key={u.id} href={`/users/${u.id}`}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9">
@@ -161,7 +162,7 @@ export default async function AdvancedSearchPage({
                     <TableCell>
                       <Rating rating={u.rating} count={u.ratingCount} />
                     </TableCell>
-                  </TableRow>
+                  </LinkRow>
                 ))}
                 {usersResult.users.length === 0 && (
                   <TableRow>
