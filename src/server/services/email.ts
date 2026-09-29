@@ -46,6 +46,38 @@ export async function sendEmail({
   }
 }
 
+export async function sendPasswordResetEmail(email: string, name: string, token: string) {
+  const resetUrl = `${APP_URL}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+
+  if (!process.env.SENDGRID_API_KEY) {
+    console.log(`[DEV] Password reset link for ${email}: ${resetUrl}`);
+    return;
+  }
+
+  await sendEmail({
+    to: email,
+    toName: name,
+    subject: "Restablece tu contraseña — efness",
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+        <img src="${APP_URL}/efness-logo-color.svg" alt="efness" width="140" style="margin-bottom:32px"/>
+        <h2 style="color:#293762;margin:0 0 12px">Hola, ${name}</h2>
+        <p style="color:#78829d;margin:0 0 24px">
+          Recibimos una solicitud para restablecer tu contraseña. Haz clic en el
+          botón para elegir una nueva. Este enlace expira en 60 minutos.
+        </p>
+        <a href="${resetUrl}"
+           style="display:inline-block;padding:14px 28px;background:#00E84A;color:#293762;font-weight:700;text-decoration:none;border-radius:10px">
+          Restablecer contraseña
+        </a>
+        <p style="color:#969BAF;font-size:13px;margin-top:32px">
+          Si no solicitaste restablecer tu contraseña, puedes ignorar este mensaje.
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function sendVerificationEmail(email: string, name: string, token: string) {
   const verifyUrl = `${APP_URL}/verify?token=${token}`;
 
