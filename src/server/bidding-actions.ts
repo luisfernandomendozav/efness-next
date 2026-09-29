@@ -2,10 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
+import { notifyNewBidding } from "@/server/services/notifications";
 
 const SUPERADMIN_ROLE_ID = 1;
 
@@ -104,10 +106,10 @@ export async function createBiddingAction(
     return { error: "invalid_bidding" };
   }
 
-  await db.$transaction(async (tx) => {
+  const bidding = await db.$transaction(async (tx) => {
     const biddingNumber = await nextBiddingNumber(tx, companyId);
     const zero = new Prisma.Decimal(0);
-    await tx.bidding.create({
+    return tx.bidding.create({
       data: {
         biddingNumber,
         createdBy: userId,
@@ -148,6 +150,10 @@ export async function createBiddingAction(
       },
     });
   });
+
+  // Aviso por correo a los proveedores que coinciden (SendGrid), después de
+  // responder, como el job de notificaciones del legacy.
+  after(() => notifyNewBidding(bidding.id));
 
   revalidatePath("/biddings");
   redirect("/biddings/active");
