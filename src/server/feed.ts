@@ -1,3 +1,4 @@
+import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/server/db";
 
 export const FEED_PAGE_SIZE = 10;
@@ -40,6 +41,60 @@ const postInclude = (viewerId: number) =>
     },
   }) as const;
 
+function fetchPosts(
+  viewerId: number,
+  where: Prisma.PostWhereInput,
+  take: number,
+) {
+  return db.post.findMany({
+    where,
+    include: postInclude(viewerId),
+    orderBy: { createdAt: "desc" },
+    take,
+  });
+}
+
+type PostRow = Awaited<ReturnType<typeof fetchPosts>>[number];
+
+function mapPost(p: PostRow, alliesCount: Map<number, number>) {
+  return {
+    id: p.id,
+    userId: p.userId,
+    username: `${p.user.name} ${p.user.lastName}`.trim(),
+    avatar: p.user.avatar,
+    companyName: p.company.name,
+    logo: p.company.logo,
+    text: p.content,
+    image: p.image,
+    visibility: p.visibility,
+    createdAt: p.createdAt?.toISOString() ?? "",
+    likes: p.likesCount,
+    shares: p.sharesCount,
+    likedByUser: p.postLikes.length > 0,
+    alliesCount: alliesCount.get(p.userId) ?? 0,
+    comments: p.comments.map((c) => ({
+      id: c.id,
+      userId: c.userId,
+      username: `${c.user.name} ${c.user.lastName}`.trim(),
+      companyName: c.user.company?.name ?? "",
+      avatar: c.user.avatar,
+      text: c.content,
+      createdAt: c.createdAt?.toISOString() ?? "",
+    })),
+    originalPost: p.originalPost
+      ? {
+          id: p.originalPost.id,
+          username:
+            `${p.originalPost.user.name} ${p.originalPost.user.lastName}`.trim(),
+          companyName: p.originalPost.company.name,
+          text: p.originalPost.content,
+          image: p.originalPost.image,
+          createdAt: p.originalPost.createdAt?.toISOString() ?? "",
+        }
+      : null,
+  };
+}
+
 export async function getFeed(viewerId: number, pages = 1) {
   const friendIds = await getFriendIds(viewerId);
   const where = {
@@ -47,12 +102,7 @@ export async function getFeed(viewerId: number, pages = 1) {
   };
 
   const [posts, total] = await Promise.all([
-    db.post.findMany({
-      where,
-      include: postInclude(viewerId),
-      orderBy: { createdAt: "desc" },
-      take: pages * FEED_PAGE_SIZE,
-    }),
+    fetchPosts(viewerId, where, pages * FEED_PAGE_SIZE),
     db.post.count({ where }),
   ]);
 
@@ -74,44 +124,30 @@ export async function getFeed(viewerId: number, pages = 1) {
 
   return {
     hasAllies: friendIds.length > 0,
-    posts: posts.map((p) => ({
-      id: p.id,
-      userId: p.userId,
-      username: `${p.user.name} ${p.user.lastName}`.trim(),
-      avatar: p.user.avatar,
-      companyName: p.company.name,
-      logo: p.company.logo,
-      text: p.content,
-      image: p.image,
-      visibility: p.visibility,
-      createdAt: p.createdAt?.toISOString() ?? "",
-      likes: p.likesCount,
-      shares: p.sharesCount,
-      likedByUser: p.postLikes.length > 0,
-      alliesCount: alliesCount.get(p.userId) ?? 0,
-      comments: p.comments.map((c) => ({
-        id: c.id,
-        userId: c.userId,
-        username: `${c.user.name} ${c.user.lastName}`.trim(),
-        companyName: c.user.company?.name ?? "",
-        avatar: c.user.avatar,
-        text: c.content,
-        createdAt: c.createdAt?.toISOString() ?? "",
-      })),
-      originalPost: p.originalPost
-        ? {
-            id: p.originalPost.id,
-            username:
-              `${p.originalPost.user.name} ${p.originalPost.user.lastName}`.trim(),
-            companyName: p.originalPost.company.name,
-            text: p.originalPost.content,
-            image: p.originalPost.image,
-            createdAt: p.originalPost.createdAt?.toISOString() ?? "",
-          }
-        : null,
-    })),
+    posts: posts.map((p) => mapPost(p, alliesCount)),
     hasMore: total > pages * FEED_PAGE_SIZE,
   };
+}
+
+// Publicaciones del perfil de un usuario: todas si el que mira es el propio
+// usuario o un aliado; solo las públicas en caso contrario (como el legacy
+// ProfilePage, que filtraba visibility en el cliente).
+export async function getUserPosts(
+  viewerId: number,
+  authorId: number,
+  includeAlliesOnly: boolean,
+  authorAlliesCount: number,
+) {
+  const posts = await fetchPosts(
+    viewerId,
+    {
+      userId: authorId,
+      ...(includeAlliesOnly ? {} : { visibility: "public" as const }),
+    },
+    FEED_PAGE_SIZE,
+  );
+  const alliesCount = new Map([[authorId, authorAlliesCount]]);
+  return posts.map((p) => mapPost(p, alliesCount));
 }
 
 export type FeedResult = Awaited<ReturnType<typeof getFeed>>;
