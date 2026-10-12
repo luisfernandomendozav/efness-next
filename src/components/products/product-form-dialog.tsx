@@ -200,9 +200,8 @@ export function ProductFormDialog({
               <Input
                 id="p-brand"
                 name="brand"
-                required
                 defaultValue={product?.form.brand ?? ""}
-                placeholder={t("Product brand")}
+                placeholder={t("Product brand (optional)")}
               />
             </div>
           )}

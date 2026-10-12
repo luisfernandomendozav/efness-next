@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { useT } from "@/i18n/use-t";
 import type { BusinessProfile } from "@/server/account-business";
@@ -66,6 +66,10 @@ export function CategoriesForm({
     undefined,
   );
   const [selected, setSelected] = useState<number[]>(selectedCategoryIds);
+
+  useEffect(() => {
+    setSelected(selectedCategoryIds);
+  }, [selectedCategoryIds]);
 
   return (
     <Card>
@@ -162,10 +166,12 @@ export function GeoScopesForm({
   countries,
   states,
   scopes,
+  knownCities,
 }: {
   countries: BusinessProfile["countries"];
   states: BusinessProfile["states"];
   scopes: BusinessProfile["scopes"];
+  knownCities: string[];
 }) {
   const t = useT();
   const [state, formAction, pending] = useActionState(
@@ -257,12 +263,18 @@ export function GeoScopesForm({
             {mode === "cities" && (
               <div className="space-y-2">
                 <Label htmlFor="geo-city">{t("Cities (comma separated)")}</Label>
+                <datalist id="city-suggestions">
+                  {knownCities.map((city) => (
+                    <option key={city} value={city} />
+                  ))}
+                </datalist>
                 <Input
                   id="geo-city"
                   name="cityName"
                   required
                   maxLength={2000}
                   placeholder="Hermosillo, Nogales, Guaymas"
+                  list="city-suggestions"
                 />
               </div>
             )}

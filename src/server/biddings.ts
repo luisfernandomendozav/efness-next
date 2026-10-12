@@ -27,35 +27,58 @@ const TAB_STATUSES: Record<BiddingsTab, string[]> = {
   closed: ["closed", "rated"],
 };
 
-function searchWhere(search: string): Prisma.BiddingWhereInput {
-  const s = { contains: search, mode: "insensitive" as const };
-  return {
-    OR: [
-      { biddingNumber: s },
-      { creator: { name: s } },
-      { creator: { company: { name: s } } },
-      { address: { city: s } },
-    ],
-  };
+async function searchBiddingIds(search: string): Promise<number[]> {
+  const pattern = `%${search}%`;
+  const rows = await db.$queryRaw<{ id: number }[]>`
+    SELECT DISTINCT b.id FROM biddings b
+    LEFT JOIN users u ON b.created_by = u.id
+    LEFT JOIN companies c ON u.company_id = c.id
+    LEFT JOIN user_addresses ua ON b.address_id = ua.id
+    WHERE unaccent(b.bidding_number) ILIKE unaccent(${pattern})
+       OR unaccent(COALESCE(u.name, '')) ILIKE unaccent(${pattern})
+       OR unaccent(COALESCE(c.name, '')) ILIKE unaccent(${pattern})
+       OR unaccent(COALESCE(ua.city, '')) ILIKE unaccent(${pattern})
+  `;
+  return rows.map((r) => r.id);
 }
 
 export async function sellerActiveExtras(
   viewer: BiddingsViewer,
 ): Promise<Prisma.BiddingWhereInput[]> {
-  const [categories, scopes] = await Promise.all([
-    db.userCategory.findMany({
-      where: { userId: viewer.userId },
-      select: { categoryId: true },
-    }),
+  const [scopes, sellerProducts] = await Promise.all([
     db.sellerGeographicScope.findMany({
       where: { sellerId: viewer.userId, scopeType: "include" },
       select: { countryId: true, stateId: true, cityName: true, level: true },
     }),
+    viewer.companyId !== null
+      ? db.productCatalog.findMany({
+          where: { companyId: viewer.companyId },
+          select: { keywords: true },
+        })
+      : Promise.resolve([] as { keywords: string[] }[]),
   ]);
 
   const extras: Prisma.BiddingWhereInput[] = [];
-  if (categories.length > 0) {
-    extras.push({ categoryId: { in: categories.map((c) => c.categoryId) } });
+
+  const sellerKeywords = [
+    ...new Set(
+      sellerProducts.flatMap((p) =>
+        Array.isArray(p.keywords) ? (p.keywords as string[]) : [],
+      ),
+    ),
+  ];
+  if (sellerKeywords.length > 0) {
+    const kwOr = sellerKeywords.map((kw) => ({
+      name: { contains: kw, mode: "insensitive" as const },
+    }));
+    extras.push({
+      OR: [
+        { biddingProducts: { some: { OR: kwOr } } },
+        ...sellerKeywords.map((kw) => ({
+          description: { contains: kw, mode: "insensitive" as const },
+        })),
+      ],
+    });
   }
   if (scopes.length > 0) {
     extras.push({
@@ -205,10 +228,14 @@ export async function getBiddings(
   search: string,
   page: number,
 ) {
+  const [tabWhere, searchIds] = await Promise.all([
+    whereForTab(viewer, tab),
+    search ? searchBiddingIds(search) : Promise.resolve(null),
+  ]);
   const where: Prisma.BiddingWhereInput = {
     AND: [
-      await whereForTab(viewer, tab),
-      ...(search ? [searchWhere(search)] : []),
+      tabWhere,
+      ...(searchIds !== null ? [{ id: { in: searchIds } }] : []),
     ],
   };
 
