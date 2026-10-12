@@ -148,6 +148,7 @@ export default async function AccountPage() {
             countries={business.countries}
             states={business.states}
             scopes={business.scopes}
+            knownCities={business.knownCities}
           />
         </TabsContent>
 

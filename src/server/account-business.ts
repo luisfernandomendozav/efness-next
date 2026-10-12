@@ -5,7 +5,7 @@ import { db } from "@/server/db";
 // del frontend legacy, sin mapa).
 
 export async function getBusinessProfile(userId: number) {
-  const [categories, userCategories, countries, states, scopes] =
+  const [categories, userCategories, countries, states, scopes, addressCities, scopeCities] =
     await Promise.all([
       db.category.findMany({
         select: { id: true, name: true },
@@ -31,7 +31,26 @@ export async function getBusinessProfile(userId: number) {
         },
         orderBy: { id: "asc" },
       }),
+      db.userAddress.findMany({
+        where: { city: { not: "" } },
+        select: { city: true },
+        distinct: ["city"],
+        orderBy: { city: "asc" },
+      }),
+      db.sellerGeographicScope.findMany({
+        where: { cityName: { not: null } },
+        select: { cityName: true },
+        distinct: ["cityName"],
+        orderBy: { cityName: "asc" },
+      }),
     ]);
+
+  const knownCities = [
+    ...new Set([
+      ...addressCities.map((a) => a.city),
+      ...scopeCities.map((s) => s.cityName!).filter(Boolean),
+    ]),
+  ].sort();
 
   return {
     categories,
@@ -46,6 +65,7 @@ export async function getBusinessProfile(userId: number) {
       stateName: s.state?.name ?? null,
       cityName: s.cityName,
     })),
+    knownCities,
   };
 }
 

@@ -61,10 +61,6 @@ export async function saveProductAction(
   if (!parsed.success) return { error: "invalid_product" };
   const data = parsed.data;
 
-  if (data.productTypeId !== SERVICE_TYPE_ID && !data.brand) {
-    return { error: "brand_required" };
-  }
-
   const hasCustomTax =
     data.customTaxName !== undefined && data.customTaxRate !== undefined;
   if (data.taxIds.length === 0 && !hasCustomTax) {
@@ -256,10 +252,6 @@ export async function importProductsAction(
     }
     if (!unit || unit.productTypeId !== type.id) {
       errors.push({ row: rowNumber, reason: "unknown_unit" });
-      continue;
-    }
-    if (type.id !== SERVICE_TYPE_ID && !row.marca) {
-      errors.push({ row: rowNumber, reason: "missing_brand" });
       continue;
     }
     if (!Number.isFinite(price) || price < 0) {

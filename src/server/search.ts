@@ -34,9 +34,17 @@ export async function searchUsers(viewer: SearchViewer, f: SearchFilters) {
         ? SELLER_TYPE_ID
         : null;
 
-  const s = f.search
-    ? { contains: f.search, mode: "insensitive" as const }
-    : null;
+  let textSearchIds: number[] | null = null;
+  if (f.search) {
+    const pattern = `%${f.search}%`;
+    const rows = await db.$queryRaw<{ id: number }[]>`
+      SELECT u.id FROM users u
+      WHERE unaccent(u.name) ILIKE unaccent(${pattern})
+         OR unaccent(u.last_name) ILIKE unaccent(${pattern})
+         OR unaccent(u.email) ILIKE unaccent(${pattern})
+    `;
+    textSearchIds = rows.map((r) => r.id);
+  }
 
   const where: Prisma.UserWhereInput = {
     accountStatus: "active",
@@ -47,13 +55,7 @@ export async function searchUsers(viewer: SearchViewer, f: SearchFilters) {
     ...(targetType !== null
       ? { userTypeId: targetType }
       : { userTypeId: { not: null } }),
-    ...(s
-      ? {
-          AND: [
-            { OR: [{ name: s }, { lastName: s }, { email: s }] },
-          ],
-        }
-      : {}),
+    ...(textSearchIds !== null ? { id: { in: textSearchIds } } : {}),
     ...(f.category
       ? { userCategories: { some: { categoryId: f.category } } }
       : {}),

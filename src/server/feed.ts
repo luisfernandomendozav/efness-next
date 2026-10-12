@@ -178,16 +178,25 @@ export async function getPotentialAllies(
     ...pending.map((r) => (r.senderId === viewerId ? r.receiverId : r.senderId)),
   ];
 
-  const s = search
-    ? { contains: search, mode: "insensitive" as const }
-    : null;
+  let eligibleIds: number[] | null = null;
+  if (search) {
+    const pattern = `%${search}%`;
+    const matched = await db.$queryRaw<{ id: number }[]>`
+      SELECT u.id FROM users u
+      LEFT JOIN companies c ON u.company_id = c.id
+      WHERE unaccent(u.name) ILIKE unaccent(${pattern})
+         OR unaccent(u.last_name) ILIKE unaccent(${pattern})
+         OR unaccent(COALESCE(c.name, '')) ILIKE unaccent(${pattern})
+    `;
+    eligibleIds = matched.map((r) => r.id).filter((id) => !excluded.includes(id));
+  }
+
   const users = await db.user.findMany({
     where: {
-      id: { notIn: excluded },
       accountStatus: "active",
-      ...(s
-        ? { OR: [{ name: s }, { lastName: s }, { company: { name: s } }] }
-        : {}),
+      ...(eligibleIds !== null
+        ? { id: { in: eligibleIds } }
+        : { id: { notIn: excluded } }),
     },
     select: {
       id: true,
