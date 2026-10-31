@@ -13,13 +13,23 @@ const SUPERADMIN_ROLE_ID = 1;
 
 export type BiddingActionState = { error?: string } | undefined;
 
+// date-only strings (YYYY-MM-DD) from <input type="date"> are parsed by JS as
+// UTC midnight, so "2026-10-31" becomes Oct 30 @ 18:00 for UTC-6 users —
+// their deadline expires a day early. Treat date-only input as end of UTC day.
+const deadlineDateSchema = z
+  .string()
+  .transform((s) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(`${s}T23:59:59Z`) : new Date(s),
+  )
+  .pipe(z.date());
+
 const biddingSchema = z
   .object({
     categoryId: z.coerce.number().int().min(1),
     currency: z.enum(["MXN", "USD", "EUR"]),
     deliveryType: z.enum(["shipping", "open_to_origin"]),
     addressId: z.coerce.number().int().optional(),
-    deadline: z.coerce.date(),
+    deadline: deadlineDateSchema,
     deliveryDate: z.coerce.date(),
     description: z.string().trim().max(255).optional(),
     notes: z.string().trim().max(5000).optional(),
