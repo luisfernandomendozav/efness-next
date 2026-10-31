@@ -169,6 +169,7 @@ export async function createQuoteAction(
     }
   });
 
-  revalidatePath("/biddings");
+  revalidatePath("/biddings/active");
+  revalidatePath("/biddings/quoted");
   redirect("/biddings/quoted");
 }
